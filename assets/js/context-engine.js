@@ -95,7 +95,6 @@
       route(input){
         const text=String(input||"").trim(),t=clean(text);
         if(isGreeting(t))return {intent:"greeting",text};
-        if(isCorrection(t))return {intent:"correction",text};
         if(isReport(t)){
           report=mergeReport({period:extractPeriod(t,now()),filters:{}},t,now());
           lastIntent="report";
@@ -105,14 +104,16 @@
           report=mergeReport(report,t,now());lastIntent="report";
           return {intent:"report",text,report,isFollowUp:true};
         }
+        if(isCorrection(t))return {intent:"correction",text};
         if(/\b(help|what can you do|how does this work)\b/i.test(t))return {intent:"help",text};
         if(/\b(spent|paid|bought|purchased|received|earned|credited|salary|refund|reimbursed)\b/i.test(t) || /\b\d+(?:\.\d{1,2})?\s*(aed|inr|usd|omr|sgd|eur|gbp)\b/i.test(t)){
-          lastIntent="transaction";return {intent:"transaction",text};
+          report=null;lastIntent="transaction";return {intent:"transaction",text};
         }
         return {intent:"unknown",text,previousIntent:lastIntent};
       },
       getReport(){return report?JSON.parse(JSON.stringify(report)):null;},
       clear(){report=null;lastIntent=null;pending=null;lastTransaction=null;},
+      clearReport(){report=null;},
       setPending(value){pending=value;},
       getPending(){return pending;},
       setLastTransaction(value){lastTransaction=value;},
