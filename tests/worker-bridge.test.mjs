@@ -134,11 +134,12 @@ test("worker validates Turnstile then returns only a schema-validated Groq inten
     }));
   };
   try {
-    const response = await worker.fetch(makeRequest(), ENV);
+    const response = await worker.fetch(makeRequest(), { ...ENV, GROQ_MODEL: "a-paid-model-must-not-be-used" });
     const data = await response.json();
     assert.equal(response.status, 200);
     assert.equal(data.intent, "transaction.create");
     assert.equal(data.transactions[0].amount, 25);
+    assert.equal(data.reply, "I have prepared the transaction for you to review.");
     assert.deepEqual(calls, [
       "https://challenges.cloudflare.com/turnstile/v0/siteverify",
       "https://api.groq.com/openai/v1/chat/completions"
@@ -167,5 +168,47 @@ test("worker returns a no-cost rate-limit message if Groq free quota is exhauste
     const data = await response.json();
     assert.equal(response.status, 429);
     assert.match(data.error, /will not switch to a paid service/i);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+
+test("worker rejects a valid Turnstile token carrying the wrong action", async () => {
+  let groqCalled = false;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async url => {
+    if (String(url).includes("siteverify")) {
+      return new Response(JSON.stringify({
+        success: true, hostname: ENV.ALLOWED_HOSTNAME, action: "another_form"
+      }));
+    }
+    groqCalled = true;
+    return new Response("{}");
+  };
+  try {
+    const response = await worker.fetch(makeRequest(), ENV);
+    assert.equal(response.status, 403);
+    assert.equal(groqCalled, false);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("worker rejects oversized messages before external verification", async () => {
+  let externalCalled = false;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { externalCalled = true; return new Response("{}"); };
+  try {
+    const response = await worker.fetch(makeRequest({ ...requestBody, message: "x".repeat(19000) }), ENV);
+    assert.equal(response.status, 413);
+    assert.equal(externalCalled, false);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("worker rejects messages over the conversational input limit", async () => {
+  let externalCalled = false;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { externalCalled = true; return new Response("{}"); };
+  try {
+    const response = await worker.fetch(makeRequest({ ...requestBody, message: "x".repeat(1501) }), ENV);
+    assert.equal(response.status, 400);
+    assert.equal(externalCalled, false);
   } finally { globalThis.fetch = originalFetch; }
 });
