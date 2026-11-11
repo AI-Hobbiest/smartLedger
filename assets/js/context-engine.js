@@ -77,8 +77,8 @@
     && !/\b(spent|paid|bought|purchased|received|earned|credited)\s+(?:aed|inr|usd|omr|sgd|eur|gbp|\d)/i.test(t);
   const isCorrection = t => /\b(actually|i meant|change (it|that)|make (it|that)|set (it|the amount)|wrong|correct that|previous one|last transaction)\b/i.test(t);
   const isReportFollowUp = (t, prior) => !!prior && (
-    /^(?:(?:just|only)\\s+)?(?:today|yesterday|tomorrow|this week|last week|this month|last month|last 7 days|past 7 days)[?.!\\s]*$/i.test(t) ||
-    /^(what about|how about|and|also|break it down|show me|just|no|not|instead|rather)\\b/i.test(t) &&
+    /^(?:(?:just|only)\s+)?(?:today|yesterday|tomorrow|this week|last week|this month|last month|last 7 days|past 7 days)[?.!\s]*$/i.test(t) ||
+    /^(what about|how about|and|also|break it down|show me|just|no|not|instead|rather)\b/i.test(t) &&
       /(today|yesterday|tomorrow|week|month|category|grocer|food|travel|cash|card|income|expense)/i.test(t)
   );
   const mergeReport = (prior, text, now) => {
@@ -105,8 +105,8 @@
           return {intent:"report",text,report,isFollowUp:false};
         }
         if(isCorrection(t))return {intent:"correction",text};
-        if(/\\b(help|what can you do|how does this work)\\b/i.test(t))return {intent:"help",text};
-        if(/\\b(spent|paid|bought|purchased|received|earned|credited|salary|refund|reimbursed)\\b/i.test(t) || /\\b\\d+(?:\\.\\d{1,2})?\\s*(aed|inr|usd|omr|sgd|eur|gbp)\\b/i.test(t)){
+        if(/\b(help|what can you do|how does this work)\b/i.test(t))return {intent:"help",text};
+        if(/\b(spent|paid|bought|purchased|received|earned|credited|salary|refund|reimbursed)\b/i.test(t) || /\b\d+(?:\.\d{1,2})?\s*(aed|inr|usd|omr|sgd|eur|gbp)\b/i.test(t)){
           report=null;lastIntent="transaction";return {intent:"transaction",text};
         }
         return {intent:"unknown",text,previousIntent:lastIntent};
