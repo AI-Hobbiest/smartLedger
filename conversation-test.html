@@ -36,6 +36,7 @@
           <label class="sr-only" for="prompt">Describe your transaction</label>
           <textarea id="prompt" rows="2" maxlength="500" placeholder="e.g. Spent 80 AED on dinner last night…" required></textarea>
           <button class="send-btn" type="submit" aria-label="Send message"><span>↑</span></button>
+          <div id="turnstile-holder" class="turnstile-holder"></div>
           <div class="composer-hint">Enter to send · Shift + Enter for a new line</div>
         </form>
       </section>
@@ -47,8 +48,11 @@
     </main>
     <footer>Smart Ledger · Conversation prototype · Test data stays on this device</footer>
   </div>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  <script src="./assets/js/runtime-config.js" defer></script>
   <script src="./assets/js/context-engine.js" defer></script>
   <script src="./assets/js/intent-adapter.js" defer></script>
+  <script src="./assets/js/provider-bridge.js" defer></script>
   <script src="./assets/js/conversation-test.js" defer></script>
 </body>
 </html>
