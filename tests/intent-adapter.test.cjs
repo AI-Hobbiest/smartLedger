@@ -97,3 +97,11 @@ test("invalid provider report dates fall back to the prior context rather than c
   assert.equal(result.report.period.from,"2026-10-01");
   assert.equal(result.report.period.to,"2026-10-31");
 });
+
+
+test("mixed expenses and income keep their own transaction types", async () => {
+  const result=await adapterApi.create().interpret("I spent 20 AED on lunch and received 500 AED salary");
+  assert.equal(result.transactions.length,2);
+  assert.deepEqual(result.transactions.map(x=>x.type),["Expense","Income"]);
+  assert.deepEqual(result.transactions.map(x=>x.category),["Food/EatOut","Salary"]);
+});
