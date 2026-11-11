@@ -78,7 +78,7 @@
   const isCorrection = t => /\b(actually|i meant|change (it|that)|make (it|that)|set (it|the amount)|wrong|correct that|previous one|last transaction)\b/i.test(t);
   const isReportFollowUp = (t, prior) => !!prior && (
     /^(?:(?:just|only)\s+)?(?:today|yesterday|tomorrow|this week|last week|this month|last month|last 7 days|past 7 days)[?.!\s]*$/i.test(t) ||
-    /^(what about|how about|and|also|break it down|show me|just|no|not|instead|rather)\b/i.test(t) &&
+    /^(what about|how about|and|also|break it down|show me|just|only|no|not|instead|rather)\b/i.test(t) &&
       /(today|yesterday|tomorrow|week|month|category|grocer|food|travel|cash|card|income|expense)/i.test(t)
   );
   const mergeReport = (prior, text, now) => {
