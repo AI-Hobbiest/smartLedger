@@ -112,6 +112,7 @@
         return {intent:"unknown",text,previousIntent:lastIntent};
       },
       getReport(){return report?JSON.parse(JSON.stringify(report)):null;},
+      setReport(value){report=value&&typeof value==="object"?JSON.parse(JSON.stringify(value)):null;lastIntent=report?"report":lastIntent;},
       clear(){report=null;lastIntent=null;pending=null;lastTransaction=null;},
       clearReport(){report=null;},
       setPending(value){pending=value;},
