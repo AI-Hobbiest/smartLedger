@@ -21,7 +21,12 @@
     if(token==="$"||token==="usd")return "USD";
     return token==="omr"?"OMR":token==="sgd"?"SGD":token==="eur"?"EUR":token==="gbp"?"GBP":"AED";
   };
-  const typeFrom = text => /\b(received|salary|income|earned|credited|reimbursement|refund|cashback|reimbursed)\b/i.test(text)?"Income":"Expense";
+  const typeFrom = text => {
+    const t=String(text||"");
+    const income=/\b(received|salary|income|earned|credited|reimbursement|refund|cashback|reimbursed)\b/i.test(t);
+    const expense=/\b(spent|spend|paid|pay|purchase|purchased|bought|expense|expenses)\b/i.test(t);
+    return income===expense?null:(income?"Income":"Expense");
+  };
   const paymentFrom = text => {
     const t=String(text||"").toLowerCase();
     if(/credit card|\bcc\b/.test(t))return "Credit Card";
@@ -89,7 +94,7 @@
   const makeDraft = (segment, fullText, options={}) => {
     const match=parseAmountMatches(segment)[0] || options.amountMatch;
     if(!match)return null;
-    const type=typeFrom(segment)==="Income"||options.sharedType==="Income"?"Income":"Expense";
+    const type=typeFrom(segment)||options.sharedType||"Expense";
     const currency=match.currency||currencyFrom(segment)||options.sharedCurrency||"AED";
     const date=dateFrom(/\b(today|yesterday|tomorrow|day before yesterday|\d{1,2}[\/.-]\d{1,2})\b/i.test(segment)?segment:fullText);
     const payment=paymentFrom(segment)!=="Other"?paymentFrom(segment):(options.sharedPayment||paymentFrom(fullText));
