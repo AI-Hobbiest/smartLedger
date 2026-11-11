@@ -117,14 +117,15 @@
     const type=raw.type==="Income"?"Income":raw.type==="Expense"?"Expense":null;
     const amount=Number(raw.amount);
     const currency=CURRENCIES.includes(String(raw.currency||"").toUpperCase())?String(raw.currency).toUpperCase():null;
-    const date=typeof raw.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(raw.date)&&new Date(raw.date+"T00:00:00Z").toISOString().slice(0,10)===raw.date?raw.date:null;
+    const dateValue=typeof raw.date==="string"?raw.date:"";
+    const dateObject=/^\d{4}-\d{2}-\d{2}$/.test(dateValue)?new Date(dateValue+"T00:00:00Z"):null;
+    const date=dateObject&&!Number.isNaN(dateObject.getTime())&&dateObject.toISOString().slice(0,10)===dateValue?dateValue:null;
     if(!type||!Number.isFinite(amount)||amount<=0||!currency||!date)throw new Error("The language provider draft is missing a valid type, positive amount, currency or date.");
     const allowedCategories=["Food/EatOut","Grocery","Apparel","Devotional","Travel","Misc/Others","Spiritual","Investments","Salary","Other Income","Refund"];
     const category=allowedCategories.includes(raw.category)?raw.category:"Misc/Others";
     const payment=["Cash","Debit Card","Credit Card","Bank Transfer","Digital Wallet","Other"].includes(raw.payment)?raw.payment:"Other";
     const description=typeof raw.description==="string"&&raw.description.trim()?raw.description.trim().slice(0,120):"Transaction";
     const rate=RATES[currency]||1; // The language provider never controls FX calculations.
-    const rate=Number.isFinite(fx)&&fx>0?fx:(RATES[currency]||1);
     return {type,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,date,category,description,payment,spentBy:"TEST_USER_1",spentByLabel:"Test User 1",notes:typeof raw.notes==="string"?raw.notes.slice(0,500):"",original:String(defaults.original||""),source:"provider"};
   };
   const validateProviderResult = (result, input, conversation={}) => {
