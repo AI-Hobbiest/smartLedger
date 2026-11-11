@@ -28,7 +28,7 @@
   const inferCategory = (text,type,merchant) => {
     const t=(text+" "+merchant).toLowerCase();
     if(type==="Income"){if(/salary|payroll/.test(t))return "Salary";if(/refund|reimburs/.test(t))return "Refund";return "Other Income";}
-    if(/grocery|supermarket|carrefour|lulu|hypermarket|vegetable|milk/.test(t))return "Grocery";
+    if(/groc|groceir|supermarket|carrefour|lulu|hypermarket|vegetable|milk/.test(t))return "Grocery";
     if(/taxi|uber|careem|flight|airport|metro|fuel|petrol|bus|train/.test(t))return "Travel";
     if(/temple|hundi|donation|offering/.test(t))return "Spiritual";
     if(/shirt|shoe|clothes|apparel|dress/.test(t))return "Apparel";
@@ -142,7 +142,8 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
       const rows=readRecords(),idx=lastSavedId?rows.findIndex(r=>r.id===lastSavedId):rows.length-1;
       if(idx>=0){rows[idx].payment=paymentMatch[1]==="credit card"?"Credit Card":paymentMatch[1]==="debit card"?"Debit Card":paymentMatch[1]==="bank transfer"?"Bank Transfer":paymentMatch[1]==="digital wallet"?"Digital Wallet":"Cash";rows[idx].updatedAt=new Date().toISOString();writeRecords(rows);addMessage("Updated the most recently saved transaction's payment method to "+rows[idx].payment+".");return true;}
     }
-    if(lastReportQuery && /\b(what about|how about|and)\b/.test(lower) && /\b(today|yesterday|tomorrow|this week|last week|this month|last month)\b/.test(lower)){
+    const dateFollowup=/^(?:(?:just|only)\s+)?(?:today|yesterday|tomorrow|this week|last week|this month|last month)[?.!\s]*$/.test(lower.trim());
+    if(lastReportQuery && (dateFollowup || /\b(what about|how about|and)\b/.test(lower)) && /\b(today|yesterday|tomorrow|this week|last week|this month|last month)\b/.test(lower)){
       const dateWords=lower.match(/\b(today|yesterday|tomorrow|this week|last week|this month|last month)\b/);
       const revised=lastReportQuery.replace(/\b(today|yesterday|tomorrow|this week|last week|this month|last month)\b/gi,dateWords[1]);
       answerReport(revised);return true;
