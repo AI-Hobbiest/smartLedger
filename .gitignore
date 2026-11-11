@@ -1,0 +1,13 @@
+# Local secrets and user data
+.env
+.env.*
+!.env.example
+*.token
+*.sqlite
+*.db
+*.xlsx
+!database/SmartLedger_DB_Template_v1.1.xlsx
+user-data/
+backups/
+.DS_Store
+Thumbs.db
