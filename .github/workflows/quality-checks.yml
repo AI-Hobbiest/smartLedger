@@ -19,6 +19,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check assets/js/context-engine.js
+          node --check assets/js/intent-adapter.js
           node --check assets/js/conversation-test.js
       - name: Run finance conversation scenarios
         run: node --test tests/context-engine.test.cjs
