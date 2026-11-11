@@ -52,6 +52,45 @@
     const fx=currency==="AED"?1:currency==="INR"?0.044:currency==="USD"?3.6725:currency==="OMR"?9.55:currency==="SGD"?2.75:currency==="EUR"?3.95:4.65;
     return {date:parseDate(text),type,amount,currency,fxRateToBase:fx,baseAmount:amount*fx,category:inferCategory(text,type,merchant),description,payment,spentBy:"TEST_USER_1",spentByLabel:"Test User 1",notes:"",original:text};
   };
+  const moneyAED = value => "AED "+Number(value||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const reportIntent = text => /\\b(summary|summar(y|ise|ize)|report|breakdown|how much|total|show|list|what did i spend|expenses? today|transactions?)\\b/i.test(text);
+  const reportRange = text => {
+    const lower=text.toLowerCase(), now=new Date();
+    let start=new Date(now.getFullYear(),now.getMonth(),now.getDate()), end=new Date(start);
+    if(/\\byesterday\\b/.test(lower)){start.setDate(start.getDate()-1);end=new Date(start);}
+    else if(/\\b(last week|past week|this week)\\b/.test(lower)){
+      const day=(start.getDay()+6)%7;start.setDate(start.getDate()-day);
+      if(/last week/.test(lower)){start.setDate(start.getDate()-7);end=new Date(start);end.setDate(end.getDate()+6);}
+      else end=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    } else if(/\\b(this month|month to date)\\b/.test(lower)){start=new Date(now.getFullYear(),now.getMonth(),1);}
+    else if(/\\blast month\\b/.test(lower)){start=new Date(now.getFullYear(),now.getMonth()-1,1);end=new Date(now.getFullYear(),now.getMonth(),0);}
+    else {
+      const m=lower.match(/\\b(\\d{1,2})[\\/.-](\\d{1,2})(?:[\\/.-](\\d{2,4}))?\\b/);
+      if(m){let y=m[3]?Number(m[3]):now.getFullYear();if(y<100)y+=2000;start=new Date(y,Number(m[2])-1,Number(m[1]));end=new Date(start);}
+    }
+    return {from:localISO(start),to:localISO(end)};
+  };
+  const answerReport = text => {
+    const range=reportRange(text), lower=text.toLowerCase();
+    const all=readRecords();
+    const rows=all.filter(r=>r.date>=range.from&&r.date<=range.to);
+    const expenses=rows.filter(r=>r.type==="Expense"), incomes=rows.filter(r=>r.type==="Income");
+    const base=r=>Number.isFinite(Number(r.baseAmount))?Number(r.baseAmount):Number(r.amount||0)*Number(r.fxRateToBase||1);
+    const expenseTotal=expenses.reduce((s,r)=>s+base(r),0), incomeTotal=incomes.reduce((s,r)=>s+base(r),0);
+    const net=incomeTotal-expenseTotal;
+    const label=range.from===range.to?range.from:range.from+" to "+range.to;
+    if(!rows.length){addMessage("I couldn't find any saved transactions for "+label+". Once you add entries, I can summarise them here.");return;}
+    const lines=["Your ledger summary · "+label,"","Expenses: "+moneyAED(expenseTotal)+" ("+expenses.length+" entries)","Income: "+moneyAED(incomeTotal)+" ("+incomes.length+" entries)","Net: "+(net<0?"−":"+")+moneyAED(Math.abs(net))];
+    if(expenses.length){
+      const byCategory={};expenses.forEach(r=>{const k=r.category||"Uncategorised";byCategory[k]=(byCategory[k]||0)+base(r);});
+      lines.push("","Expense breakdown:");
+      Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>lines.push("• "+k+": "+moneyAED(v)));
+    }
+    const expenseOnly=/\\b(expense|expenses|spent|spending)\\b/i.test(text)&&!/\\b(income|overall|all transactions)\\b/i.test(text);
+    const shown=(expenseOnly?expenses:rows).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,8);
+    if(shown.length){lines.push("","Transactions"+(shown.length===8?" (latest 8)":"")+":");shown.forEach(r=>lines.push("• "+r.date+" · "+(r.description||r.category||"Transaction")+" · "+r.currency+" "+Number(r.amount||0).toFixed(2)+" ("+moneyAED(base(r))+")"));}
+    addMessage(lines.join("\\n"));
+  };
   const renderReview = draft => {
     pending=draft;
     const wrapper=document.createElement("div");wrapper.className="message assistant";
@@ -83,7 +122,7 @@
     });
     $("cancel-entry").addEventListener("click",()=>{card.innerHTML='<b>Draft cancelled.</b><p>You can describe the transaction again whenever you’re ready.</p>';pending=null;});
   };
-  $("chat-form").addEventListener("submit",e=>{e.preventDefault();const text=$("prompt").value.trim();if(!text)return;addMessage(text,"user");$("prompt").value="";const draft=parse(text);if(draft.error){addMessage(draft.error);return;}addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");renderReview(draft);});
+  $("chat-form").addEventListener("submit",e=>{e.preventDefault();const text=$("prompt").value.trim();if(!text)return;addMessage(text,"user");$("prompt").value="";if(reportIntent(text)){answerReport(text);return;}const draft=parse(text);if(draft.error){addMessage(draft.error);return;}addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");renderReview(draft);});
   document.querySelectorAll(".suggestion").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("chat-form").requestSubmit();}));
   $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;});
   $("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("chat-form").requestSubmit();}});
