@@ -53,11 +53,24 @@
     return {date:parseDate(text),type,amount,currency,fxRateToBase:fx,baseAmount:amount*fx,category:inferCategory(text,type,merchant),description,payment,spentBy:"TEST_USER_1",spentByLabel:"Test User 1",notes:"",original:text};
   };
   const moneyAED = value => "AED "+Number(value||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-  const reportIntent = text => { const t=text.toLowerCase(); return /\b(summary|summar(y|ise|ize)|report|breakdown|how much|total|show|list|what did i spend|transactions?)\b/i.test(t) || (/\b(expense|expenses|spend|spending)\b/i.test(t) && (/\b(today|yesterday|this week|last week|this month|last month|last 7 days|past 7 days)\b/i.test(t) || /\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?\b/.test(t))); };
+  const reportIntent = text => {
+    const t=text.toLowerCase();
+    const monthYear=/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s*['’]?\s*\d{2,4}\b|\b\d{4}\s+(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i.test(t);
+    return /\b(summary|summar(y|ise|ize)|report|breakdown|how much|total|show|list|what did i spend|transactions?)\b/i.test(t)
+      || (/\b(expense|expenses|spend|spending|outgoings?)\b/i.test(t) && (/\b(today|yesterday|this week|last week|this month|last month|last 7 days|past 7 days)\b/i.test(t) || /\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?\b/.test(t) || monthYear));
+  };
   const reportRange = text => {
     const lower=text.toLowerCase(), now=new Date();
     let start=new Date(now.getFullYear(),now.getMonth(),now.getDate()), end=new Date(start);
-    if(/\byesterday\b/.test(lower)){start.setDate(start.getDate()-1);end=new Date(start);}
+    const monthNames={jan:0,january:0,feb:1,february:1,mar:2,march:2,apr:3,april:3,may:4,jun:5,june:5,jul:6,july:6,aug:7,august:7,sep:8,sept:8,september:8,oct:9,october:9,nov:10,november:10,dec:11,december:11};
+    const named=lower.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s*['’]?\s*(\d{2,4})\b|\b(\d{4})\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i);
+    if(named){
+      const month=(named[1]||named[4]).toLowerCase(), rawYear=named[2]||named[3];
+      let year=Number(rawYear);if(year<100)year+=2000;
+      start=new Date(year,monthNames[month],1);end=new Date(year,monthNames[month]+1,0);
+    } else if(/\byesterday\b/.test(lower)){start.setDate(start.getDate()-1);end=new Date(start);}
+    else if(/\b(today|just today|only today)\b/.test(lower)){end=new Date(start);}
+    else if(/\b(last 7 days|past 7 days)\b/.test(lower)){start.setDate(start.getDate()-6);}
     else if(/\b(last week|past week|this week)\b/.test(lower)){
       const day=(start.getDay()+6)%7;start.setDate(start.getDate()-day);
       if(/last week/.test(lower)){start.setDate(start.getDate()-7);end=new Date(start);end.setDate(end.getDate()+6);}
@@ -66,7 +79,7 @@
     else if(/\blast month\b/.test(lower)){start=new Date(now.getFullYear(),now.getMonth()-1,1);end=new Date(now.getFullYear(),now.getMonth(),0);}
     else {
       const m=lower.match(/\b(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?\b/);
-      if(m){let y=m[3]?Number(m[3]):now.getFullYear();if(y<100)y+=2000;start=new Date(y,Number(m[2])-1,Number(m[1]));end=new Date(start);}
+      if(m){let y=m[3]?Number(m[3]):now.getFullYear();if(y<100)y+=2000;start=new Date(y,Number(m[2])-1,1);end=new Date(y,Number(m[2]),0);}
     }
     return {from:localISO(start),to:localISO(end)};
   };
@@ -152,7 +165,15 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     if(lastReportQuery && /\b(and by category|category breakdown|break it down by category)\b/.test(lower)){answerReport(lastReportQuery+" by category");return true;}
     return false;
   };
-  $("chat-form").addEventListener("submit",e=>{e.preventDefault();const text=$("prompt").value.trim();if(!text)return;addMessage(text,"user");$("prompt").value="";if(handleFollowUp(text))return;if(reportIntent(text)){answerReport(text);return;}lastReportQuery=null;const draft=parse(text);if(draft.error){addMessage(draft.error);return;}addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");renderReview(draft);});
+  const handleGreeting = text => {
+    const t=text.trim().toLowerCase();
+    if(/^(hi|hello|hey|hiya|good morning|good afternoon|good evening)[!.\\s]*$/.test(t)){
+      addMessage("Hello! I'm here. You can tell me about an expense, ask for a spending summary, or continue with a follow-up question.");
+      return true;
+    }
+    return false;
+  };
+  $("chat-form").addEventListener("submit",e=>{e.preventDefault();const text=$("prompt").value.trim();if(!text)return;addMessage(text,"user");$("prompt").value="";if(handleGreeting(text))return;if(handleFollowUp(text))return;if(reportIntent(text)){answerReport(text);return;}lastReportQuery=null;const draft=parse(text);if(draft.error){addMessage(draft.error);return;}addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");renderReview(draft);});
   document.querySelectorAll(".suggestion").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("chat-form").requestSubmit();}));
   $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;});
   $("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("chat-form").requestSubmit();}});
