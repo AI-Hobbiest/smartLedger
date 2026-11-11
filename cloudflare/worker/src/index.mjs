@@ -138,9 +138,10 @@ function sanitizeContext(context) {
 
 function sanitizeHistory(history, currentMessage) {
   if (!Array.isArray(history)) return [];
-  return history.slice(-MAX_HISTORY_ITEMS)
+  return history
     // Do not send assistant report replies or ledger summaries to the model.
     .filter(item => item && item.role === "user" && typeof item.content === "string")
+    .slice(-MAX_HISTORY_ITEMS)
     .map(item => ({ role: "user", content: item.content.slice(0, MAX_MESSAGE_CHARS) }))
     .filter(item => item.content !== currentMessage);
 }
