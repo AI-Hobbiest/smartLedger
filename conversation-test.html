@@ -15,14 +15,14 @@
       <nav><a class="nav-link" href="./entry-test.html">Form entry</a><span class="prototype-tag">CONVERSATION TEST</span></nav>
     </header>
     <section class="intro">
-      <div><p class="eyebrow">NATURAL-LANGUAGE ENTRY</p><h1>Talk to your ledger.</h1><p>Record transactions, ask about saved spending, and follow up naturally. You can correct a draft or clarify the previous entry without starting over.</p></div>
+      <div><p class="eyebrow">NATURAL-LANGUAGE ENTRY</p><h1>Talk to your ledger.</h1><p>Record one or several transactions in a message, review them together, ask about saved spending, and refine a draft through follow-ups.</p></div>
       <div class="connection"><span class="pulse"></span><span><b>Prototype mode</b><small>Local test data · No OneDrive sync</small></span></div>
     </section>
     <main class="workspace">
       <section class="chat-panel">
         <div class="chat-top"><div><span class="bot-avatar">SL</span><span><b>Smart Ledger Assistant</b><small><i></i> Ready to capture entries</small></span></div><button id="clear-chat" class="quiet-btn" type="button">Reset chat</button></div>
         <div id="chat" class="chat" aria-live="polite">
-          <div class="message assistant"><div class="bubble"><b>Hi! I can help you record transactions or understand your spending.</b><p>Try something like “I spent 45 AED at Carrefour today using my credit card” or “Received 5,000 AED salary”. I’ll prepare a draft for you to review. You can also ask “Give me a summary of today’s expenses” or “How much did I spend yesterday?”</p></div><time>Smart Ledger</time></div>
+          <div class="message assistant"><div class="bubble"><b>Hi! I can help you record transactions or understand your spending.</b><p>Try something like “I spent 45 AED at Carrefour today using my credit card” or “Received 5,000 AED salary”. I’ll prepare one or more drafts for you to review before saving. You can also ask “Give me a summary of today’s expenses” or “How much did I spend yesterday?”</p></div><time>Smart Ledger</time></div>
         </div>
         <div class="suggestions">
           <span>Try an example</span>
@@ -42,7 +42,7 @@
       <aside class="right-rail">
         <section class="info-card"><p class="eyebrow">HOW IT WORKS</p><div class="how-step"><span>1</span><div><b>Say it naturally</b><small>Amount, currency, merchant, date or payment method.</small></div></div><div class="how-step"><span>2</span><div><b>Review the draft</b><small>Correct any field before it enters your test ledger.</small></div></div><div class="how-step"><span>3</span><div><b>Confirm to save</b><small>Only confirmed entries are added to local test data.</small></div></div></section>
         <section class="info-card stats"><p class="eyebrow">SHARED TEST LEDGER</p><strong id="entry-count">0</strong><small>Saved transactions in this browser</small><a href="./entry-test.html">Open form-entry ledger →</a></section>
-        <section class="warning-card"><b>Current boundary</b><p>The finance context engine carries report filters and date ranges across follow-ups and keeps transaction edits separate from report context. Intent parsing is deterministic, not a live AI model. Data stays in this browser and is not synced to OneDrive. A future AI provider can plug into the same context contract without owning ledger rules or data.</p></section>
+        <section class="warning-card"><b>Current boundary</b><p>The finance context engine carries report filters across follow-ups. The provider-neutral intent adapter can prepare multiple expense or income drafts for one review. This page currently uses deterministic local parsing, not a live AI provider. Data stays in this browser and is not synced to OneDrive. A trusted backend provider can be plugged in later without giving it control of ledger storage or calculations.</p></section>
       </aside>
     </main>
     <footer>Smart Ledger · Conversation prototype · Test data stays on this device</footer>
