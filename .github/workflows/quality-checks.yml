@@ -22,4 +22,4 @@ jobs:
           node --check assets/js/intent-adapter.js
           node --check assets/js/conversation-test.js
       - name: Run finance conversation scenarios
-        run: node --test tests/context-engine.test.cjs
+        run: node --test tests/context-engine.test.cjs tests/intent-adapter.test.cjs
