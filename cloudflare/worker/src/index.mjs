@@ -232,7 +232,7 @@ async function callGroq(input, env, local) {
       "content-type": "application/json"
     },
     body: JSON.stringify({
-      model: env.GROQ_MODEL || MODEL_DEFAULT,
+      model: MODEL_DEFAULT,
       messages,
       temperature: 0.1,
       max_completion_tokens: MAX_OUTPUT_TOKENS,
@@ -298,7 +298,7 @@ export default {
     }
 
     if (url.pathname === "/health" && request.method === "GET") {
-      return jsonResponse({ ok: true, service: "smart-ledger-finance-language", provider: "Groq free tier", model: env.GROQ_MODEL || MODEL_DEFAULT }, 200, origin === allowedOrigin ? allowedOrigin : "");
+      return jsonResponse({ ok: true, service: "smart-ledger-finance-language", provider: "Groq free tier", model: MODEL_DEFAULT }, 200, origin === allowedOrigin ? allowedOrigin : "");
     }
 
     if (url.pathname !== "/api/interpret" || request.method !== "POST") {
