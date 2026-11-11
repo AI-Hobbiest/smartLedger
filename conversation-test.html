@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#243b53">
+  <meta name="description" content="Smart Ledger conversational transaction entry prototype.">
+  <link rel="stylesheet" href="./assets/css/conversation-test.css">
+  <title>Smart Ledger | Conversation Test</title>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <a class="brand" href="./index.html"><span class="brand-icon">SL</span><span><small>GANATHE FINANCE</small><strong>Smart Ledger</strong></span></a>
+      <nav><a class="nav-link" href="./entry-test.html">Form entry</a><span class="prototype-tag">CONVERSATION TEST</span></nav>
+    </header>
+    <section class="intro">
+      <div><p class="eyebrow">NATURAL-LANGUAGE ENTRY</p><h1>Talk to your ledger.</h1><p>Describe an expense or income in your own words. Review the details before saving.</p></div>
+      <div class="connection"><span class="pulse"></span><span><b>Prototype mode</b><small>Local test data · No OneDrive sync</small></span></div>
+    </section>
+    <main class="workspace">
+      <section class="chat-panel">
+        <div class="chat-top"><div><span class="bot-avatar">SL</span><span><b>Smart Ledger Assistant</b><small><i></i> Ready to capture entries</small></span></div><button id="clear-chat" class="quiet-btn" type="button">Reset chat</button></div>
+        <div id="chat" class="chat" aria-live="polite">
+          <div class="message assistant"><div class="bubble"><b>Hi! What would you like to record?</b><p>Try something like “I spent 45 AED at Carrefour today using my credit card” or “Received 5,000 AED salary”. I’ll prepare a draft for you to review.</p></div><time>Smart Ledger</time></div>
+        </div>
+        <div class="suggestions">
+          <span>Try an example</span>
+          <button type="button" class="suggestion" data-prompt="I spent 45 AED at Carrefour today using my credit card">🛒 Grocery expense</button>
+          <button type="button" class="suggestion" data-prompt="Paid INR 1,250 for a taxi in Chennai yesterday">🚕 Foreign currency</button>
+          <button type="button" class="suggestion" data-prompt="Received 5,000 AED salary today">↗ Income</button>
+        </div>
+        <form id="chat-form" class="composer">
+          <label class="sr-only" for="prompt">Describe your transaction</label>
+          <textarea id="prompt" rows="2" maxlength="500" placeholder="e.g. Spent 80 AED on dinner last night…" required></textarea>
+          <button class="send-btn" type="submit" aria-label="Send message"><span>↑</span></button>
+          <div class="composer-hint">Enter to send · Shift + Enter for a new line</div>
+        </form>
+      </section>
+      <aside class="right-rail">
+        <section class="info-card"><p class="eyebrow">HOW IT WORKS</p><div class="how-step"><span>1</span><div><b>Say it naturally</b><small>Amount, currency, merchant, date or payment method.</small></div></div><div class="how-step"><span>2</span><div><b>Review the draft</b><small>Correct any field before it enters your test ledger.</small></div></div><div class="how-step"><span>3</span><div><b>Confirm to save</b><small>Only confirmed entries are added to local test data.</small></div></div></section>
+        <section class="info-card stats"><p class="eyebrow">SHARED TEST LEDGER</p><strong id="entry-count">0</strong><small>Saved transactions in this browser</small><a href="./entry-test.html">Open form-entry ledger →</a></section>
+        <section class="warning-card"><b>Prototype limitation</b><p>This page uses rule-based extraction, not an online AI model. It does not connect to OneDrive. Unclear details should be checked before confirmation.</p></section>
+      </aside>
+    </main>
+    <footer>Smart Ledger · Conversation prototype · Test data stays on this device</footer>
+  </div>
+  <script src="./assets/js/conversation-test.js" defer></script>
+</body>
+</html>
