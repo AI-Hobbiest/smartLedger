@@ -149,7 +149,7 @@
         return true;
       }
     }
-        const amountCorrection=lower.match(/\b(?:change (?:it|that) to|make (?:it|that)|set (?:it|the amount) to)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
+        const amountCorrection=lower.match(/\b(?:change (?:it|that) to|make (?:it|that)|set (?:it|the amount) to|actually (?:it was|that was)|it was|that was)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
     if(!pending && amountCorrection){
       const rows=readRecords(),idx=lastSavedId?rows.findIndex(r=>r.id===lastSavedId):rows.length-1,amount=Number(amountCorrection[1].replace(/,/g,""));
       if(idx>=0 && amount>0){rows[idx].amount=amount;rows[idx].baseAmount=amount*Number(rows[idx].fxRateToBase||1);rows[idx].updatedAt=new Date().toISOString();writeRecords(rows);addMessage("Updated the most recently saved transaction to "+rows[idx].currency+" "+amount.toFixed(2)+" (AED "+rows[idx].baseAmount.toFixed(2)+").");return true;}
