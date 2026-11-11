@@ -249,6 +249,13 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     return false;
   };
   const intentAdapter=window.SmartLedgerIntentAdapter.create({provider:window.SmartLedgerLanguageProvider||null});
+  if(intentAdapter.hasProvider()){
+    $("ai-status").textContent="Free AI bridge configured";
+    $("ai-status-detail").textContent="Groq Free API · local test ledger · no OneDrive sync";
+  }else{
+    $("ai-status").textContent="Local parsing mode";
+    $("ai-status-detail").textContent="Free AI setup pending · local test ledger · no OneDrive sync";
+  }
   $("chat-form").addEventListener("submit",async e=>{
     e.preventDefault();const text=$("prompt").value.trim();if(!text)return;
     addMessage(text,"user");$("prompt").value="";
