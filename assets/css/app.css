@@ -1,0 +1,35 @@
+:root {
+  color-scheme: light;
+  --ink: #243b53;
+  --muted: #627d98;
+  --surface: #ffffff;
+  --canvas: #f4f7fb;
+  --accent: #287d78;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+  font: 16px/1.55 Aptos, "Segoe UI", sans-serif;
+}
+.shell { width: min(920px, calc(100% - 36px)); margin: 0 auto; padding: 34px 0; }
+.topbar { display: flex; align-items: center; gap: 14px; }
+.brand-mark {
+  display: grid; place-items: center; width: 48px; height: 48px;
+  border-radius: 14px; background: var(--ink); color: white; font-weight: 800;
+}
+.eyebrow { margin: 0 0 4px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+h1, h2, p { margin-top: 0; }
+h1 { margin-bottom: 0; font-size: 21px; }
+.welcome {
+  margin-top: 48px; padding: clamp(26px, 6vw, 54px);
+  border: 1px solid #e2eaf1; border-radius: 24px; background: var(--surface);
+  box-shadow: 0 14px 40px rgba(36, 59, 83, .06);
+}
+.welcome h2 { max-width: 620px; margin: 8px 0 14px; font-size: clamp(30px, 5vw, 46px); line-height: 1.12; }
+.welcome > p:not(.eyebrow) { max-width: 620px; color: var(--muted); }
+.status { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--accent); font-size: 13px; font-weight: 700; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+footer { margin-top: 22px; color: var(--muted); font-size: 12px; text-align: center; }
