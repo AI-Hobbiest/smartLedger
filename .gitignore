@@ -11,3 +11,7 @@ user-data/
 backups/
 .DS_Store
 Thumbs.db
+# Local Cloudflare Worker secrets and generated state
+.dev.vars
+.dev.vars.*
+.wrangler/
