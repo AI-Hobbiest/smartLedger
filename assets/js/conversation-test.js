@@ -11,6 +11,9 @@
   const writeRecords = rows => localStorage.setItem(KEY,JSON.stringify(rows));
   const escapeHtml = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const addMessage = (text,who="assistant") => {
+    if(!Array.isArray(window.SmartLedgerConversationHistory))window.SmartLedgerConversationHistory=[];
+    window.SmartLedgerConversationHistory.push({role:who==="user"?"user":"assistant",content:String(text||"").slice(0,1500)});
+    if(window.SmartLedgerConversationHistory.length>12)window.SmartLedgerConversationHistory.shift();
     const el=document.createElement("div"); el.className="message "+who;
     const bubble=document.createElement("div"); bubble.className="bubble"; bubble.textContent=text;
     const time=document.createElement("time"); time.textContent=who==="user"?"You":"Smart Ledger";
@@ -252,7 +255,7 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     const route=context.route(text);
     if(route.intent==="greeting"){handleGreeting(text);return;}
     if(route.intent==="correction" && handleFollowUp(text))return;
-    if(route.intent==="report"){answerReport(text,route.report);return;}
+    if(!intentAdapter.hasProvider() && route.intent==="report"){answerReport(text,route.report);return;}
     if(handleFollowUp(text))return;
     lastReportQuery=null;
     const interpreted=await intentAdapter.interpret(text,context.snapshot());
@@ -276,7 +279,7 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     renderReview(draft);
   });
   document.querySelectorAll(".suggestion").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("chat-form").requestSubmit();}));
-  $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;pendingCard=null;lastReportQuery=null;lastSavedId=null;context.clear();});
+  $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;pendingCard=null;lastReportQuery=null;lastSavedId=null;context.clear();window.SmartLedgerConversationHistory=[];});
   $("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("chat-form").requestSubmit();}});
   updateCount();
 })();
