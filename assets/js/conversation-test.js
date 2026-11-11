@@ -63,7 +63,8 @@
       '<label>Date<input id="r-date" type="date" value="'+escapeHtml(draft.date)+'"></label>'+
       '<label>Amount<input id="r-amount" type="number" min="0.01" step="0.01" value="'+draft.amount+'"></label>'+
       '<label>Currency<select id="r-currency">'+options(["AED","INR","USD","OMR","SGD","EUR","GBP"],draft.currency)+'</select></label>'+
-      '<label>Category<select id="r-category">'+options(categories,draft.category)+'</select></label>'+\n      '<label>FX rate to AED<input id="r-rate" type="number" min="0.000001" step="any" value="'+draft.fxRateToBase+'"></label>'+
+      '<label>Category<select id="r-category">'+options(categories,draft.category)+'</select></label>'+
+      '<label>FX rate to AED<input id="r-rate" type="number" min="0.000001" step="any" value="'+draft.fxRateToBase+'"></label>'+
       '<label>Payment<select id="r-payment">'+options(payments,draft.payment)+'</select></label>'+
       '<label class="wide">Description<input id="r-description" maxlength="120" value="'+escapeHtml(draft.description)+'"></label>'+
       '<label class="wide">Spent by<select id="r-spent">'+options(["TEST_USER_1","TEST_USER_2","TEST_USER_3"],draft.spentBy)+'</select></label>'+
