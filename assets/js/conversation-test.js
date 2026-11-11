@@ -132,6 +132,53 @@
     });
     $("cancel-entry").addEventListener("click",()=>{card.innerHTML='<b>Draft cancelled.</b><p>You can describe the transaction again whenever you’re ready.</p>';pending=null;context.setPending(null);});
   };
+  const renderBatchReview = drafts => {
+    pending=drafts;context.setPending(drafts);
+    const wrapper=document.createElement("div");wrapper.className="message assistant";
+    const card=document.createElement("div");card.className="review-card batch-review";
+    const options=(arr,selected)=>arr.map(v=>'<option '+(v===selected?'selected':'')+' value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join("");
+    const currencies=["AED","INR","USD","OMR","SGD","EUR","GBP"];
+    const people=["TEST_USER_1","TEST_USER_2","TEST_USER_3"];
+    const entries=drafts.map((draft,index)=>'<section class="batch-entry"><div class="batch-entry-head"><b>Transaction '+(index+1)+'</b><span>'+escapeHtml(draft.source||"DRAFT")+'</span></div>'+
+      '<div class="review-grid">'+
+      '<label>Type<select id="b-type-'+index+'">'+options(["Expense","Income"],draft.type)+'</select></label>'+
+      '<label>Date<input id="b-date-'+index+'" type="date" value="'+escapeHtml(draft.date)+'"></label>'+
+      '<label>Amount<input id="b-amount-'+index+'" type="number" min="0.01" step="0.01" value="'+draft.amount+'"></label>'+
+      '<label>Currency<select id="b-currency-'+index+'">'+options(currencies,draft.currency)+'</select></label>'+
+      '<label>Category<select id="b-category-'+index+'">'+options(categories,draft.category)+'</select></label>'+
+      '<label>FX rate to AED<input id="b-rate-'+index+'" type="number" min="0.000001" step="any" value="'+draft.fxRateToBase+'"></label>'+
+      '<label>Payment<select id="b-payment-'+index+'">'+options(payments,draft.payment)+'</select></label>'+
+      '<label>Spent by<select id="b-spent-'+index+'">'+options(people,draft.spentBy)+'</select></label>'+
+      '<label class="wide">Description<input id="b-description-'+index+'" maxlength="120" value="'+escapeHtml(draft.description)+'"></label>'+
+      '<label class="wide">Notes<input id="b-notes-'+index+'" maxlength="500" value="" placeholder="Optional notes"></label>'+
+      '</div><div class="base-preview" id="b-preview-'+index+'"></div></section>').join("");
+    card.innerHTML='<div class="review-head"><b>Review '+drafts.length+' transactions</b><span>DRAFT · NOT SAVED</span></div>'+
+      '<p class="batch-intro">I found several transactions in your message. Review each one below; nothing is saved until you confirm the whole batch.</p>'+
+      entries+
+      '<div class="review-actions"><button class="confirm-btn" id="confirm-batch" type="button">Confirm & save all '+drafts.length+'</button><button class="edit-cancel" id="cancel-batch" type="button">Cancel all</button></div>';
+    wrapper.append(card);$("chat").append(wrapper);pendingCard=card;$("chat").scrollTop=$("chat").scrollHeight;
+    const rates={AED:1,INR:0.044,USD:3.6725,OMR:9.55,SGD:2.75,EUR:3.95,GBP:4.65};
+    drafts.forEach((draft,index)=>{
+      const update=()=>{const currency=$("b-currency-"+index).value,amount=Number($("b-amount-"+index).value||0),rate=currency==="AED"?1:Number($("b-rate-"+index).value||0);$("b-preview-"+index).textContent="Estimated base amount: AED "+(amount*rate).toFixed(2)+(currency!=="AED"?" · FX rate is an editable estimate; verify before saving.":"");};
+      ["b-amount-"+index,"b-rate-"+index].forEach(id=>$(id).addEventListener("input",update));
+      $("b-currency-"+index).addEventListener("change",()=>{$("b-rate-"+index).value=rates[$("b-currency-"+index).value];update();});
+      update();
+    });
+    $("confirm-batch").addEventListener("click",()=>{
+      const records=[],now=new Date().toISOString();
+      for(let i=0;i<drafts.length;i++){
+        const amount=Number($("b-amount-"+i).value),currency=$("b-currency-"+i).value,rate=currency==="AED"?1:Number($("b-rate-"+i).value),description=$("b-description-"+i).value.trim(),date=$("b-date-"+i).value;
+        if(!amount||amount<=0||!date||!description||!rate||rate<=0){addMessage("Please check Transaction "+(i+1)+": amount, date, description and FX rate must all be valid. Nothing has been saved.");return;}
+        const spent=$("b-spent-"+i);
+        records.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+"-"+i,date,type:$("b-type-"+i).value,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,category:$("b-category-"+i).value,description,payment:$("b-payment-"+i).value,spentBy:spent.value,spentByLabel:spent.options[spent.selectedIndex].text,recordedBy:"TEST_USER_1",tripId:"",notes:$("b-notes-"+i).value.trim(),createdAt:now,updatedAt:now});
+      }
+      const rows=readRecords();rows.push(...records);writeRecords(rows);lastSavedId=records[records.length-1].id;context.setLastTransaction(lastSavedId);
+      card.innerHTML='<div class="review-head"><b>Batch saved to test ledger</b><span>CONFIRMED</span></div>'+records.map((r,i)=>'<div class="batch-saved-row"><b>'+(i+1)+'. '+escapeHtml(r.description)+'</b><span>'+escapeHtml(r.currency+" "+r.amount.toFixed(2)+" · AED "+r.baseAmount.toFixed(2))+'</span></div>').join("");
+      pending=null;pendingCard=null;context.setPending(null);updateCount();addMessage("Done. I've added all "+records.length+" transactions to your local test ledger. They are not synced to OneDrive.");
+      $("chat").scrollTop=$("chat").scrollHeight;
+    });
+    $("cancel-batch").addEventListener("click",()=>{card.innerHTML='<b>Batch cancelled.</b><p>None of these transactions were saved.</p>';pending=null;context.setPending(null);});
+  };
   const handleFollowUp = text => {
     const lower=text.toLowerCase();
     if(pending){
@@ -179,7 +226,35 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     }
     return false;
   };
-  $("chat-form").addEventListener("submit",e=>{e.preventDefault();const text=$("prompt").value.trim();if(!text)return;addMessage(text,"user");$("prompt").value="";const route=context.route(text);if(route.intent==="greeting"){handleGreeting(text);return;}if(route.intent==="correction" && handleFollowUp(text))return;if(route.intent==="report"){answerReport(text,route.report);return;}if(handleFollowUp(text))return;lastReportQuery=null;const draft=parse(text);if(draft.error){addMessage(draft.error);return;}addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");renderReview(draft);});
+  const intentAdapter=window.SmartLedgerIntentAdapter.create({provider:window.SmartLedgerLanguageProvider||null});
+  $("chat-form").addEventListener("submit",async e=>{
+    e.preventDefault();const text=$("prompt").value.trim();if(!text)return;
+    addMessage(text,"user");$("prompt").value="";
+    const route=context.route(text);
+    if(route.intent==="greeting"){handleGreeting(text);return;}
+    if(route.intent==="correction" && handleFollowUp(text))return;
+    if(route.intent==="report"){answerReport(text,route.report);return;}
+    if(handleFollowUp(text))return;
+    lastReportQuery=null;
+    const interpreted=await intentAdapter.interpret(text,context.snapshot());
+    if(interpreted.intent==="clarification"){addMessage(interpreted.question);return;}
+    if(interpreted.intent==="provider.error"){addMessage(interpreted.message);return;}
+    if(interpreted.intent==="help"){addMessage("I can record expenses and income, review multiple transactions together, correct a draft, or answer questions about your saved spending. Describe what happened in your own words.");return;}
+    if(interpreted.intent==="transaction.create"){
+      if(interpreted.transactions.length>1){
+        addMessage("I found "+interpreted.transactions.length+" transactions. Please review them together before saving.");
+        renderBatchReview(interpreted.transactions);
+      } else {
+        addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");
+        renderReview(interpreted.transactions[0]);
+      }
+      return;
+    }
+    const draft=parse(text);
+    if(draft.error){addMessage(draft.error);return;}
+    addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");
+    renderReview(draft);
+  });
   document.querySelectorAll(".suggestion").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("chat-form").requestSubmit();}));
   $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;pendingCard=null;lastReportQuery=null;lastSavedId=null;context.clear();});
   $("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("chat-form").requestSubmit();}});
