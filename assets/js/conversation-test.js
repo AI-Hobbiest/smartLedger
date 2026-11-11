@@ -181,6 +181,25 @@
   };
   const handleFollowUp = text => {
     const lower=text.toLowerCase();
+    if(Array.isArray(pending)){
+      const ordinal=lower.match(/\b(first|second|third|fourth|fifth|last|transaction\s+(\d+)|#(\d+))\b/);
+      const index=ordinal?(ordinal[1]==="first"?0:ordinal[1]==="second"?1:ordinal[1]==="third"?2:ordinal[1]==="fourth"?3:ordinal[1]==="fifth"?4:ordinal[1]==="last"?pending.length-1:Number(ordinal[2]||ordinal[3])-1):-1;
+      if(index>=0 && index<pending.length){
+        const draft=pending[index];let changed=false;
+        const amount=lower.match(/\b(?:should be|was|to|make it|change (?:it|that) to|actually (?:it was|that was))\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
+        if(amount){draft.amount=Number(amount[1].replace(/,/g,""));draft.baseAmount=draft.amount*Number(draft.fxRateToBase||1);changed=true;}
+        const pay=lower.match(/\b(cash|credit card|debit card|bank transfer|digital wallet)\b/);
+        if(pay){draft.payment=pay[1]==="credit card"?"Credit Card":pay[1]==="debit card"?"Debit Card":pay[1]==="bank transfer"?"Bank Transfer":pay[1]==="digital wallet"?"Digital Wallet":"Cash";changed=true;}
+        if(/\b(today|yesterday|tomorrow|day before yesterday)\b/.test(lower)){draft.date=parseDate(text);changed=true;}
+        const extracted=window.SmartLedgerContext.extractFilters(text);
+        if(extracted.category){draft.category=extracted.category;changed=true;}
+        if(changed){if(pendingCard)pendingCard.innerHTML="<b>Batch draft updated.</b><p>The revised batch is shown below. Nothing has been saved.</p>";renderBatchReview(pending);addMessage("Updated Transaction "+(index+1)+". Review the revised batch before confirming.");return true;}
+      }
+      if(/\b(change|correct|actually|instead|should be|make it|set it)\b/i.test(lower)){
+        addMessage("For a batch, mention which one you mean (first, second, third…) and the change. You can also edit each transaction directly in the review list.");
+        return true;
+      }
+    }
     if(pending){
       let changed=false;
       const amount=lower.match(/\b(?:make that|change (?:it|that) to|set (?:it|the amount) to|actually (?:it was|that was)|it was|that was)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
