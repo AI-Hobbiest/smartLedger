@@ -319,6 +319,11 @@ export default {
       return jsonResponse({ error: "Smart Ledger is receiving too many requests from this connection. Please wait a minute and try again." }, 429, allowedOrigin);
     }
 
+    const contentLength = Number(request.headers.get("Content-Length") || "0");
+    if (contentLength > MAX_BODY_BYTES) {
+      return jsonResponse({ error: "Message is too large." }, 413, allowedOrigin);
+    }
+
     let rawBody;
     try { rawBody = await request.text(); }
     catch { return jsonResponse({ error: "Invalid request body." }, 400, allowedOrigin); }
