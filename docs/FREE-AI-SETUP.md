@@ -27,7 +27,9 @@ The Worker does not log request bodies or store conversation data. Groq states t
 4. Open **Data Controls** in GroqCloud and enable **Zero Data Retention (ZDR)** before using personal finance messages. Groq states this disables its temporary reliability/abuse-monitoring input/output logs for inference. Its usage metadata is still retained, but Groq says it does not contain prompt or response content.
 5. Store the key as the GitHub repository Actions secret `GROQ_API_KEY`. Never put it in `runtime-config.js`, HTML, or any file committed to Git.
 
-The Worker is pinned to `openai/gpt-oss-20b`. It does not use an automatic model router.
+The Worker is pinned to `openai/gpt-oss-20b`. It does not use an automatic model router. Groq's published Free-plan table currently lists this model at 30 requests/minute, 1,000 requests/day, 8,000 tokens/minute and 200,000 tokens/day per organisation/model. These limits can change and the exact limits for your account are shown in the Groq console. If the quota returns HTTP 429, the app stops and waits; it never tries a paid model.
+
+Groq documents Zero Data Retention as available in Data Controls. Enable it before using personal finance messages. Without ZDR, inference prompts and outputs are not retained by default, but may be logged for reliability or abuse investigations for up to 30 days.
 
 ### 2. Cloudflare free account and Worker token
 
@@ -41,7 +43,7 @@ The Worker is pinned to `openai/gpt-oss-20b`. It does not use an automatic model
    - `GROQ_API_KEY`
    - `TURNSTILE_SECRET_KEY` (after step 3)
 
-The deployment workflow uses these secrets to publish the Worker and upload the two private runtime secrets to Cloudflare. It relies on the `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` environment variables as documented by Cloudflare for CI. The Worker stays on Cloudflare's default Free plan; do not upgrade the account to Workers Paid.
+The deployment workflow uses these secrets to publish the Worker and upload the two private runtime secrets to Cloudflare. It relies on the `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` environment variables as documented by Cloudflare for CI. The Worker stays on Cloudflare's default Free plan; do not upgrade the account to Workers Paid. Cloudflare currently lists 100,000 Worker requests/day on Free. The configured 10-per-minute rate limit is approximate and counted per Cloudflare location; it is an abuse-control guard, not a global hard cap.
 
 ### 3. Cloudflare Turnstile Free widget
 
