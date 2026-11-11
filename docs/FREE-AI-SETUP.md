@@ -23,16 +23,16 @@ The Worker does not log request bodies or store conversation data. Groq states t
 
 1. Create/sign in to a Groq developer account at https://console.groq.com.
 2. Create an API key at https://console.groq.com/keys.
-3. Keep the account on the Free plan. Do not add paid billing or purchase credits.
+3. Keep the account on the Free plan. Do not add a paid plan, add billing for inference, or purchase credits. If the free quota is reached, requests should stop with a rate-limit response rather than switch to paid usage.
 4. Store the key as the GitHub repository Actions secret `GROQ_API_KEY`. Never put it in `runtime-config.js`, HTML, or any file committed to Git.
 
 The Worker is pinned to `openai/gpt-oss-20b`. It does not use an automatic model router.
 
 ### 2. Cloudflare free account and Worker token
 
-1. Create/sign in to a Cloudflare account at https://dash.cloudflare.com.
+1. Create/sign in to a Cloudflare account at https://dash.cloudflare.com. Keep Workers on the Free plan and enable the account's `workers.dev` subdomain if it is not already enabled.
 2. Find the Account ID in the account overview.
-3. Create an API token with the Cloudflare Workers Scripts Edit permission for this account.
+3. Create an API token using Cloudflare's **Edit Cloudflare Workers** template, scoped to this account only.
 4. Add these GitHub Actions repository secrets under **Settings → Secrets and variables → Actions → New repository secret**:
 
    - `CLOUDFLARE_API_TOKEN`
@@ -40,7 +40,7 @@ The Worker is pinned to `openai/gpt-oss-20b`. It does not use an automatic model
    - `GROQ_API_KEY`
    - `TURNSTILE_SECRET_KEY` (after step 3)
 
-The deployment workflow uses these secrets to publish the Worker and upload the two private runtime secrets to Cloudflare.
+The deployment workflow uses these secrets to publish the Worker and upload the two private runtime secrets to Cloudflare. It relies on the `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` environment variables as documented by Cloudflare for CI.
 
 ### 3. Cloudflare Turnstile Free widget
 
