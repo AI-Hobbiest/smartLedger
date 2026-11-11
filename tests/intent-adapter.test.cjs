@@ -104,3 +104,11 @@ test("mixed expenses and income keep their own transaction types", async () => {
   assert.deepEqual(Array.from(result.transactions,x=>x.type),["Expense","Income"]);
   assert.deepEqual(Array.from(result.transactions,x=>x.category),["Food/EatOut","Salary"]);
 });
+
+
+test("a new clause with its own verb creates a mixed second transaction", async () => {
+  const result=await adapterApi.create().interpret("I spent 20 AED on lunch and I received 500 AED salary");
+  assert.equal(result.transactions.length,2);
+  assert.deepEqual(Array.from(result.transactions,x=>x.type),["Expense","Income"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.category),["Food/EatOut","Salary"]);
+});
