@@ -1,0 +1,24 @@
+name: Smart Ledger quality checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  conversation-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript syntax
+        run: |
+          node --check assets/js/context-engine.js
+          node --check assets/js/conversation-test.js
+      - name: Run finance conversation scenarios
+        run: node --test tests/context-engine.test.cjs
