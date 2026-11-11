@@ -67,7 +67,7 @@
   const extractFilters = text => {
     const t=clean(text);
     let type=null;
-    if(/\b(expenses?|spent|spending|outgoings?)\b/.test(t))type="Expense";
+    if(/\b(expenses?|spent|spend|spending|outgoings?|expenses?|spent|spend|spending|outgoings?)\b/.test(t))type="Expense";
     if(/\b(income|salary|earnings?|received|credited)\b/.test(t))type="Income";
     if(/\b(all transactions|everything|overall|both income and expenses)\b/.test(t))type="All";
     return {type,category:extractOne(t,CATEGORIES),payment:extractOne(t,PAYMENTS),groupBy:/\b(by category|category breakdown|breakdown by category|categories)\b/.test(t)?"category":/\b(by payment|payment method|payment type)\b/.test(t)?"payment":null};
