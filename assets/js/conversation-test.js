@@ -71,6 +71,7 @@
     return {from:localISO(start),to:localISO(end)};
   };
   const answerReport = text => {
+    lastReportQuery=text;
     const range=reportRange(text), lower=text.toLowerCase();
     const all=readRecords();
     const rows=all.filter(r=>r.date>=range.from&&r.date<=range.to);
