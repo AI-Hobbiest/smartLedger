@@ -53,19 +53,19 @@
     return {date:parseDate(text),type,amount,currency,fxRateToBase:fx,baseAmount:amount*fx,category:inferCategory(text,type,merchant),description,payment,spentBy:"TEST_USER_1",spentByLabel:"Test User 1",notes:"",original:text};
   };
   const moneyAED = value => "AED "+Number(value||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-  const reportIntent = text => /\\b(summary|summar(y|ise|ize)|report|breakdown|how much|total|show|list|what did i spend|expenses? today|transactions?)\\b/i.test(text);
+  const reportIntent = text => /\b(summary|summar(y|ise|ize)|report|breakdown|how much|total|show|list|what did i spend|expenses? today|transactions?)\b/i.test(text);
   const reportRange = text => {
     const lower=text.toLowerCase(), now=new Date();
     let start=new Date(now.getFullYear(),now.getMonth(),now.getDate()), end=new Date(start);
-    if(/\\byesterday\\b/.test(lower)){start.setDate(start.getDate()-1);end=new Date(start);}
-    else if(/\\b(last week|past week|this week)\\b/.test(lower)){
+    if(/\byesterday\b/.test(lower)){start.setDate(start.getDate()-1);end=new Date(start);}
+    else if(/\b(last week|past week|this week)\b/.test(lower)){
       const day=(start.getDay()+6)%7;start.setDate(start.getDate()-day);
       if(/last week/.test(lower)){start.setDate(start.getDate()-7);end=new Date(start);end.setDate(end.getDate()+6);}
       else end=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    } else if(/\\b(this month|month to date)\\b/.test(lower)){start=new Date(now.getFullYear(),now.getMonth(),1);}
-    else if(/\\blast month\\b/.test(lower)){start=new Date(now.getFullYear(),now.getMonth()-1,1);end=new Date(now.getFullYear(),now.getMonth(),0);}
+    } else if(/\b(this month|month to date)\b/.test(lower)){start=new Date(now.getFullYear(),now.getMonth(),1);}
+    else if(/\blast month\b/.test(lower)){start=new Date(now.getFullYear(),now.getMonth()-1,1);end=new Date(now.getFullYear(),now.getMonth(),0);}
     else {
-      const m=lower.match(/\\b(\\d{1,2})[\\/.-](\\d{1,2})(?:[\\/.-](\\d{2,4}))?\\b/);
+      const m=lower.match(/\b(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?\b/);
       if(m){let y=m[3]?Number(m[3]):now.getFullYear();if(y<100)y+=2000;start=new Date(y,Number(m[2])-1,Number(m[1]));end=new Date(start);}
     }
     return {from:localISO(start),to:localISO(end)};
@@ -86,10 +86,10 @@
       lines.push("","Expense breakdown:");
       Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>lines.push("• "+k+": "+moneyAED(v)));
     }
-    const expenseOnly=/\\b(expense|expenses|spent|spending)\\b/i.test(text)&&!/\\b(income|overall|all transactions)\\b/i.test(text);
+    const expenseOnly=/\b(expense|expenses|spent|spending)\b/i.test(text)&&!/\b(income|overall|all transactions)\b/i.test(text);
     const shown=(expenseOnly?expenses:rows).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,8);
     if(shown.length){lines.push("","Transactions"+(shown.length===8?" (latest 8)":"")+":");shown.forEach(r=>lines.push("• "+r.date+" · "+(r.description||r.category||"Transaction")+" · "+r.currency+" "+Number(r.amount||0).toFixed(2)+" ("+moneyAED(base(r))+")"));}
-    addMessage(lines.join("\\n"));
+    addMessage(lines.join("\n"));
   };
   const renderReview = draft => {
     pending=draft;
