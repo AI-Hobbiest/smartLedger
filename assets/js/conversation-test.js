@@ -133,15 +133,15 @@
     const lower=text.toLowerCase();
     if(pending){
       let changed=false;
-      const amount=lower.match(/\\b(?:make that|change (?:it|that) to|set (?:it|the amount) to|actually (?:it was|that was)|it was|that was)\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)/);
+      const amount=lower.match(/\b(?:make that|change (?:it|that) to|set (?:it|the amount) to|actually (?:it was|that was)|it was|that was)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
       if(amount){pending.amount=Number(amount[1].replace(/,/g,""));pending.baseAmount=pending.amount*Number(pending.fxRateToBase||1);changed=true;}
-      const payMatches=[...lower.matchAll(/\\b(cash|credit card|debit card|bank transfer|digital wallet)\\b/g)];
+      const payMatches=[...lower.matchAll(/\b(cash|credit card|debit card|bank transfer|digital wallet)\b/g)];
       if(payMatches.length){const pay=payMatches[payMatches.length-1][1];pending.payment=pay==="credit card"?"Credit Card":pay==="debit card"?"Debit Card":pay==="bank transfer"?"Bank Transfer":pay==="digital wallet"?"Digital Wallet":"Cash";changed=true;}
-      if(/\\b(today|yesterday|tomorrow|day before yesterday)\\b/.test(lower)){pending.date=parseDate(text);changed=true;}
+      if(/\b(today|yesterday|tomorrow|day before yesterday)\b/.test(lower)){pending.date=parseDate(text);changed=true;}
       const extracted=window.SmartLedgerContext.extractFilters(text);
       if(extracted.category){pending.category=extracted.category;changed=true;}
-      if(/\\b(income|received|salary|earned)\\b/.test(lower)){pending.type="Income";pending.category=extracted.category||inferCategory(text,"Income",pending.description);changed=true;}
-      else if(/\\b(expense|spent|paid)\\b/.test(lower)){pending.type="Expense";changed=true;}
+      if(/\b(income|received|salary|earned)\b/.test(lower)){pending.type="Income";pending.category=extracted.category||inferCategory(text,"Income",pending.description);changed=true;}
+      else if(/\b(expense|spent|paid)\b/.test(lower)){pending.type="Expense";changed=true;}
       if(changed){
         if(pendingCard)pendingCard.innerHTML="<b>Draft updated.</b><p>The revised draft is shown below. Nothing has been saved yet.</p>";
         renderReview(pending);
