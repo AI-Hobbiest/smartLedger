@@ -261,6 +261,8 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     const interpreted=await intentAdapter.interpret(text,context.snapshot());
     if(interpreted.intent==="clarification"){addMessage(interpreted.question);return;}
     if(interpreted.intent==="provider.error"){addMessage(interpreted.message);return;}
+    if(interpreted.intent==="greeting"){handleGreeting(text);return;}
+    if(interpreted.intent==="unknown"){addMessage("I can help with personal finance: recording expenses or income, correcting entries, and understanding your spending. What would you like to do?");return;}
     if(interpreted.intent==="report.query"){context.setReport(interpreted.report);answerReport(text,interpreted.report);return;}
     if(interpreted.intent==="help"){addMessage("I can record expenses and income, review multiple transactions together, correct a draft, or answer questions about your saved spending. Describe what happened in your own words.");return;}
     if(interpreted.intent==="transaction.create"){
