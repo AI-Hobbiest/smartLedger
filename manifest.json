@@ -1,0 +1,11 @@
+{
+  "name": "Ganathe Finance — Smart Ledger",
+  "short_name": "Smart Ledger",
+  "description": "A lightweight family money manager.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#243b53",
+  "icons": []
+}
