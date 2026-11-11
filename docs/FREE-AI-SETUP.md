@@ -24,7 +24,8 @@ The Worker does not log request bodies or store conversation data. Groq states t
 1. Create/sign in to a Groq developer account at https://console.groq.com.
 2. Create an API key at https://console.groq.com/keys.
 3. Keep the account on the Free plan. Do not add a paid plan, add billing for inference, or purchase credits. If the free quota is reached, requests should stop with a rate-limit response rather than switch to paid usage.
-4. Store the key as the GitHub repository Actions secret `GROQ_API_KEY`. Never put it in `runtime-config.js`, HTML, or any file committed to Git.
+4. Open **Data Controls** in GroqCloud and enable **Zero Data Retention (ZDR)** before using personal finance messages. Groq states this disables its temporary reliability/abuse-monitoring input/output logs for inference. Its usage metadata is still retained, but Groq says it does not contain prompt or response content.
+5. Store the key as the GitHub repository Actions secret `GROQ_API_KEY`. Never put it in `runtime-config.js`, HTML, or any file committed to Git.
 
 The Worker is pinned to `openai/gpt-oss-20b`. It does not use an automatic model router.
 
@@ -40,7 +41,7 @@ The Worker is pinned to `openai/gpt-oss-20b`. It does not use an automatic model
    - `GROQ_API_KEY`
    - `TURNSTILE_SECRET_KEY` (after step 3)
 
-The deployment workflow uses these secrets to publish the Worker and upload the two private runtime secrets to Cloudflare. It relies on the `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` environment variables as documented by Cloudflare for CI.
+The deployment workflow uses these secrets to publish the Worker and upload the two private runtime secrets to Cloudflare. It relies on the `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` environment variables as documented by Cloudflare for CI. The Worker stays on Cloudflare's default Free plan; do not upgrade the account to Workers Paid.
 
 ### 3. Cloudflare Turnstile Free widget
 
