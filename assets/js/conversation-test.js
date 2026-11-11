@@ -74,9 +74,8 @@
     const updatePreview=()=>{const curr=$("r-currency").value,amt=Number($("r-amount").value||0),rate=curr==="AED"?1:Number($("r-rate").value||0);$("base-preview").textContent="Estimated base amount: AED "+(amt*rate).toFixed(2)+(curr!=="AED"?" · FX rate is an editable estimate; verify before saving.":"");};
     ["r-currency","r-amount","r-rate"].forEach(id=>$(id).addEventListener("input",updatePreview));$("r-currency").addEventListener("change",()=>{const rates={AED:1,INR:0.044,USD:3.6725,OMR:9.55,SGD:2.75,EUR:3.95,GBP:4.65};$("r-rate").value=rates[$("r-currency").value];updatePreview();});updatePreview();
     $("confirm-entry").addEventListener("click",()=>{
-      const amount=Number($("r-amount").value),currency=$("r-currency").value;
-      if(!amount||amount<=0||!$("r-date").value||!$("r-description").value.trim()||!rate||rate<=0){addMessage("Please check the amount, date and description before saving.");return;}
-      const rate=currency==="AED"?1:Number($("r-rate").value);
+      const amount=Number($("r-amount").value),currency=$("r-currency").value,rate=currency==="AED"?1:Number($("r-rate").value);
+      if(!amount||amount<=0||!$("r-date").value||!$("r-description").value.trim()||!rate||rate<=0){addMessage("Please check the amount, date, description and FX rate before saving.");return;}
       const rows=readRecords(),now=new Date().toISOString(),spent=$("r-spent");
       const rec={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),date:$("r-date").value,type:$("r-type").value,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,category:$("r-category").value,description:$("r-description").value.trim(),payment:$("r-payment").value,spentBy:spent.value,spentByLabel:spent.options[spent.selectedIndex].text,recordedBy:"TEST_USER_1",tripId:"",notes:$("r-notes").value.trim(),createdAt:now,updatedAt:now};
       rows.push(rec);writeRecords(rows);card.innerHTML='<div class="review-head"><b>Saved to test ledger</b><span>CONFIRMED</span></div><div class="base-preview">'+escapeHtml(rec.type+" · "+rec.currency+" "+rec.amount.toFixed(2)+" · "+rec.description)+"<br>Base amount: AED "+rec.baseAmount.toFixed(2)+'</div>';pending=null;updateCount();addMessage("Done. I've added this transaction to your local test ledger. It is not synced to OneDrive.");$("chat").scrollTop=$("chat").scrollHeight;
