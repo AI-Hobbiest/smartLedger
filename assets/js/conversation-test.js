@@ -205,7 +205,7 @@
     }
     if(pending){
       let changed=false;
-      const amount=lower.match(/\b(?:make that|change (?:it|that) to|set (?:it|the amount) to|actually (?:it was|that was)|it was|that was)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
+      const amount=lower.match(/\b(?:make that|change (?:it|that) to|set (?:it|the amount) to|actually (?:it was|that was)|it was|that was|it should be|should be|amount should be)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
       if(amount){pending.amount=Number(amount[1].replace(/,/g,""));pending.baseAmount=pending.amount*Number(pending.fxRateToBase||1);changed=true;}
       const payMatches=[...lower.matchAll(/\b(cash|credit card|debit card|bank transfer|digital wallet)\b/g)];
       if(payMatches.length){const pay=payMatches[payMatches.length-1][1];pending.payment=pay==="credit card"?"Credit Card":pay==="debit card"?"Debit Card":pay==="bank transfer"?"Bank Transfer":pay==="digital wallet"?"Digital Wallet":"Cash";changed=true;}
