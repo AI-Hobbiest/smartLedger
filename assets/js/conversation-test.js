@@ -57,7 +57,7 @@
     const t=text.toLowerCase();
     const monthYear=/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s*['’]?\s*\d{2,4}\b|\b\d{4}\s+(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i.test(t);
     return /\b(summary|summar(y|ise|ize)|report|breakdown|how much|total|show|list|what did i spend|transactions?)\b/i.test(t)
-      || (/\b(expense|expenses|spend|spending|outgoings?)\b/i.test(t) && (/\b(today|yesterday|this week|last week|this month|last month|last 7 days|past 7 days)\b/i.test(t) || /\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?\b/.test(t) || monthYear));
+      || (/\b(expense|expenses|expnse|expence|expens|spend|spending|outgoings?)\b/i.test(t) && (/\b(today|yesterday|this week|last week|this month|last month|last 7 days|past 7 days)\b/i.test(t) || /\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?\b/.test(t) || monthYear));
   };
   const reportRange = text => {
     const lower=text.toLowerCase(), now=new Date();
