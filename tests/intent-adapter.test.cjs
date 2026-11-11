@@ -13,26 +13,26 @@ test("one natural-language message produces multiple separate expense drafts", a
   const result=await adapter.interpret("I spent 20 AED on lunch and 35 AED on groceries yesterday using cash");
   assert.equal(result.intent,"transaction.create");
   assert.equal(result.transactions.length,2);
-  assert.deepEqual(result.transactions.map(x=>x.amount),[20,35]);
-  assert.deepEqual(result.transactions.map(x=>x.category),["Food/EatOut","Grocery"]);
-  assert.deepEqual(result.transactions.map(x=>x.date),[result.transactions[0].date,result.transactions[0].date]);
-  assert.deepEqual(result.transactions.map(x=>x.payment),["Cash","Cash"]);
-  assert.deepEqual(result.transactions.map(x=>x.currency),["AED","AED"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.amount),[20,35]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.category),["Food/EatOut","Grocery"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.date),[result.transactions[0].date,result.transactions[0].date]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.payment),["Cash","Cash"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.currency),["AED","AED"]);
 });
 
 test("shared income intent applies to every transaction while category is inferred per item", async () => {
   const result=await adapterApi.create().interpret("Received 5,000 AED salary and 200 AED refund");
   assert.equal(result.transactions.length,2);
-  assert.deepEqual(result.transactions.map(x=>x.type),["Income","Income"]);
-  assert.deepEqual(result.transactions.map(x=>x.category),["Salary","Refund"]);
-  assert.deepEqual(result.transactions.map(x=>x.amount),[5000,200]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.type),["Income","Income"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.category),["Salary","Refund"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.amount),[5000,200]);
 });
 
 test("different currencies in one message are preserved per transaction", async () => {
   const result=await adapterApi.create().interpret("Paid INR 1,250 for a taxi and AED 40 for lunch");
   assert.equal(result.transactions.length,2);
-  assert.deepEqual(result.transactions.map(x=>x.currency),["INR","AED"]);
-  assert.deepEqual(result.transactions.map(x=>x.category),["Travel","Food/EatOut"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.currency),["INR","AED"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.category),["Travel","Food/EatOut"]);
 });
 
 test("one amount does not split merely because the description contains 'and'", async () => {
@@ -56,12 +56,11 @@ test("provider output is normalized and restricted to safe transaction data", as
   assert.equal(result.transactions[0].baseAmount,12.5);
   assert.equal(result.transactions[0].source,"provider");
   assert.equal(result.transactions[0].spentBy,"TEST_USER_1");
-  assert.equal(result.transactions[0].deleteLedger,false);
+  assert.equal("deleteLedger" in result.transactions[0],false);
 });
 
 test("provider cannot return unsupported actions or invalid amounts", async () => {
-  const badAction=adapterApi.validateProviderResult({intent:"ledger.delete",id:"x"},"delete my ledger");
-  assert.throws(()=>badAction,/unsupported finance action/i);
+  assert.throws(()=>adapterApi.validateProviderResult({intent:"ledger.delete",id:"x"},"delete my ledger"),/unsupported finance action/i);
   assert.throws(()=>adapterApi.validateProviderResult({intent:"transaction.create",transactions:[{
     type:"Expense",amount:-5,currency:"AED",date:"2026-11-11"
   }]},"bad"),/positive amount/i);
@@ -71,7 +70,7 @@ test("provider cannot return unsupported actions or invalid amounts", async () =
 test("comma-separated transactions are split without splitting thousands separators", async () => {
   const result=await adapterApi.create().interpret("Spent AED 1,250 on groceries, 35 AED on lunch");
   assert.equal(result.transactions.length,2);
-  assert.deepEqual(result.transactions.map(x=>x.amount),[1250,35]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.amount),[1250,35]);
 });
 
 test("numeric transaction dates are not misread as extra transaction amounts", async () => {
@@ -102,6 +101,6 @@ test("invalid provider report dates fall back to the prior context rather than c
 test("mixed expenses and income keep their own transaction types", async () => {
   const result=await adapterApi.create().interpret("I spent 20 AED on lunch and received 500 AED salary");
   assert.equal(result.transactions.length,2);
-  assert.deepEqual(result.transactions.map(x=>x.type),["Expense","Income"]);
-  assert.deepEqual(result.transactions.map(x=>x.category),["Food/EatOut","Salary"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.type),["Expense","Income"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.category),["Food/EatOut","Salary"]);
 });
