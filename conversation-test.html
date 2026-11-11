@@ -15,20 +15,22 @@
       <nav><a class="nav-link" href="./entry-test.html">Form entry</a><span class="prototype-tag">CONVERSATION TEST</span></nav>
     </header>
     <section class="intro">
-      <div><p class="eyebrow">NATURAL-LANGUAGE ENTRY</p><h1>Talk to your ledger.</h1><p>Describe an expense or income in your own words. Review the details before saving.</p></div>
+      <div><p class="eyebrow">NATURAL-LANGUAGE ENTRY</p><h1>Talk to your ledger.</h1><p>Record transactions or ask questions about your saved spending. Review every new transaction before it is saved.</p></div>
       <div class="connection"><span class="pulse"></span><span><b>Prototype mode</b><small>Local test data · No OneDrive sync</small></span></div>
     </section>
     <main class="workspace">
       <section class="chat-panel">
         <div class="chat-top"><div><span class="bot-avatar">SL</span><span><b>Smart Ledger Assistant</b><small><i></i> Ready to capture entries</small></span></div><button id="clear-chat" class="quiet-btn" type="button">Reset chat</button></div>
         <div id="chat" class="chat" aria-live="polite">
-          <div class="message assistant"><div class="bubble"><b>Hi! What would you like to record?</b><p>Try something like “I spent 45 AED at Carrefour today using my credit card” or “Received 5,000 AED salary”. I’ll prepare a draft for you to review.</p></div><time>Smart Ledger</time></div>
+          <div class="message assistant"><div class="bubble"><b>Hi! I can help you record transactions or understand your spending.</b><p>Try something like “I spent 45 AED at Carrefour today using my credit card” or “Received 5,000 AED salary”. I’ll prepare a draft for you to review. You can also ask “Give me a summary of today’s expenses” or “How much did I spend yesterday?”</p></div><time>Smart Ledger</time></div>
         </div>
         <div class="suggestions">
           <span>Try an example</span>
           <button type="button" class="suggestion" data-prompt="I spent 45 AED at Carrefour today using my credit card">🛒 Grocery expense</button>
           <button type="button" class="suggestion" data-prompt="Paid INR 1,250 for a taxi in Chennai yesterday">🚕 Foreign currency</button>
           <button type="button" class="suggestion" data-prompt="Received 5,000 AED salary today">↗ Income</button>
+          <button type="button" class="suggestion" data-prompt="Give me a summary of today's expenses">📊 Today's summary</button>
+          <button type="button" class="suggestion" data-prompt="How much did I spend yesterday?">🗓 Yesterday's spend</button>
         </div>
         <form id="chat-form" class="composer">
           <label class="sr-only" for="prompt">Describe your transaction</label>
