@@ -212,3 +212,25 @@ test("worker rejects messages over the conversational input limit", async () => 
     assert.equal(externalCalled, false);
   } finally { globalThis.fetch = originalFetch; }
 });
+
+
+test("worker rejects oversized Content-Length headers before reading the message", async () => {
+  let externalCalled = false;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { externalCalled = true; return new Response("{}"); };
+  try {
+    const req = new Request("https://worker.test/api/interpret", {
+      method: "POST",
+      headers: {
+        Origin: ENV.ALLOWED_ORIGIN,
+        "Content-Type": "application/json",
+        "Content-Length": "20000",
+        "CF-Connecting-IP": "192.0.2.10"
+      },
+      body: JSON.stringify(requestBody)
+    });
+    const response = await worker.fetch(req, ENV);
+    assert.equal(response.status, 413);
+    assert.equal(externalCalled, false);
+  } finally { globalThis.fetch = originalFetch; }
+});
