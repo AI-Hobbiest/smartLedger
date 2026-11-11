@@ -124,25 +124,30 @@
   };
   const handleFollowUp = text => {
     const lower=text.toLowerCase();
-    if(pending && /\\b(make that|change (it|that) to|set (it|the amount) to|actually)\\b/.test(lower)){
+    if(pending && /\b(make that|change (it|that) to|set (it|the amount) to|actually)\b/.test(lower)){
       let changed=false;
-      const amount=lower.match(/\\b(?:make that|change (?:it|that) to|set (?:it|the amount) to)\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)/);
+      const amount=lower.match(/\b(?:make that|change (?:it|that) to|set (?:it|the amount) to)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
       if(amount){pending.amount=Number(amount[1].replace(/,/g,""));pending.baseAmount=pending.amount*pending.fxRateToBase;changed=true;}
-      const pay=lower.match(/\\b(cash|credit card|debit card|bank transfer|digital wallet)\\b/);
+      const pay=lower.match(/\b(cash|credit card|debit card|bank transfer|digital wallet)\b/);
       if(pay){pending.payment=pay[1]==="credit card"?"Credit Card":pay[1]==="debit card"?"Debit Card":pay[1]==="bank transfer"?"Bank Transfer":pay[1]==="digital wallet"?"Digital Wallet":"Cash";changed=true;}
       if(changed){if(pendingCard)pendingCard.innerHTML="<b>Draft updated.</b><p>The revised draft is shown below. Nothing has been saved yet.</p>";renderReview(pending);addMessage("I've updated the draft. Please review it again before confirming.");return true;}
     }
-    const paymentMatch=lower.match(/\\b(cash|credit card|debit card|bank transfer|digital wallet)\\b/);
-    if(paymentMatch && /\\b(previous one|last one|last transaction|that transaction|that was|actually it was)\\b/.test(lower)){
+        const amountCorrection=lower.match(/\b(?:change (?:it|that) to|make (?:it|that)|set (?:it|the amount) to)\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
+    if(!pending && amountCorrection){
+      const rows=readRecords(),idx=lastSavedId?rows.findIndex(r=>r.id===lastSavedId):rows.length-1,amount=Number(amountCorrection[1].replace(/,/g,""));
+      if(idx>=0 && amount>0){rows[idx].amount=amount;rows[idx].baseAmount=amount*Number(rows[idx].fxRateToBase||1);rows[idx].updatedAt=new Date().toISOString();writeRecords(rows);addMessage("Updated the most recently saved transaction to "+rows[idx].currency+" "+amount.toFixed(2)+" (AED "+rows[idx].baseAmount.toFixed(2)+").");return true;}
+    }
+const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|digital wallet)\b/);
+    if(paymentMatch && /\b(previous one|last one|last transaction|that transaction|that was|actually it was)\b/.test(lower)){
       const rows=readRecords(),idx=lastSavedId?rows.findIndex(r=>r.id===lastSavedId):rows.length-1;
       if(idx>=0){rows[idx].payment=paymentMatch[1]==="credit card"?"Credit Card":paymentMatch[1]==="debit card"?"Debit Card":paymentMatch[1]==="bank transfer"?"Bank Transfer":paymentMatch[1]==="digital wallet"?"Digital Wallet":"Cash";rows[idx].updatedAt=new Date().toISOString();writeRecords(rows);addMessage("Updated the most recently saved transaction's payment method to "+rows[idx].payment+".");return true;}
     }
-    if(lastReportQuery && /\\b(what about|how about|and)\\b/.test(lower) && /\\b(today|yesterday|tomorrow|this week|last week|this month|last month)\\b/.test(lower)){
-      const dateWords=lower.match(/\\b(today|yesterday|tomorrow|this week|last week|this month|last month)\\b/);
-      const revised=lastReportQuery.replace(/\\b(today|yesterday|tomorrow|this week|last week|this month|last month)\\b/gi,dateWords[1]);
+    if(lastReportQuery && /\b(what about|how about|and)\b/.test(lower) && /\b(today|yesterday|tomorrow|this week|last week|this month|last month)\b/.test(lower)){
+      const dateWords=lower.match(/\b(today|yesterday|tomorrow|this week|last week|this month|last month)\b/);
+      const revised=lastReportQuery.replace(/\b(today|yesterday|tomorrow|this week|last week|this month|last month)\b/gi,dateWords[1]);
       answerReport(revised);return true;
     }
-    if(lastReportQuery && /\\b(and by category|category breakdown|break it down by category)\\b/.test(lower)){answerReport(lastReportQuery+" by category");return true;}
+    if(lastReportQuery && /\b(and by category|category breakdown|break it down by category)\b/.test(lower)){answerReport(lastReportQuery+" by category");return true;}
     return false;
   };
   $("chat-form").addEventListener("submit",e=>{e.preventDefault();const text=$("prompt").value.trim();if(!text)return;addMessage(text,"user");$("prompt").value="";if(handleFollowUp(text))return;if(reportIntent(text)){answerReport(text);return;}const draft=parse(text);if(draft.error){addMessage(draft.error);return;}addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");renderReview(draft);});
