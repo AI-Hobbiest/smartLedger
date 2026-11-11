@@ -160,7 +160,7 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
   };
   const handleGreeting = text => {
     const t=text.trim().toLowerCase();
-    if(/^(hi|hello|hey|hiya|good morning|good afternoon|good evening)[!.\\s]*$/.test(t)){
+    if(/^(hi|hello|hey|hiya|good morning|good afternoon|good evening)[!.\s]*$/.test(t)){
       addMessage("Hello! I'm here. You can tell me about an expense, ask for a spending summary, or continue with a follow-up question.");
       return true;
     }
