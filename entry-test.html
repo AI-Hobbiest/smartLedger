@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#243b53">
+  <meta name="description" content="Smart Ledger transaction entry prototype.">
+  <link rel="stylesheet" href="./assets/css/entry-test.css">
+  <title>Smart Ledger | Entry Test</title>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <a class="brand" href="./index.html" aria-label="Smart Ledger home"><span class="brand-icon">SL</span><span><small>GANATHE FINANCE</small><strong>Smart Ledger</strong></span></a>
+      <span class="prototype-tag">ENTRY TEST · PROTOTYPE</span>
+    </header>
+    <section class="intro">
+      <div><p class="eyebrow">TRANSACTIONS</p><h1>Capture a transaction.</h1><p>Add a few everyday entries and see how they look in your ledger.</p></div>
+      <div class="connection"><span class="pulse"></span><span><b>Local test mode</b><small>OneDrive connection not enabled yet</small></span></div>
+    </section>
+    <main class="layout">
+      <section class="panel form-panel">
+        <div class="panel-heading"><div><h2>New transaction</h2><p>Fields follow the Smart Ledger workbook structure.</p></div><span class="step">01</span></div>
+        <form id="transaction-form">
+          <div class="type-switch" role="group" aria-label="Transaction type">
+            <label class="type-option active" data-type="Expense"><input type="radio" name="type" value="Expense" checked><span>↘</span> Expense</label>
+            <label class="type-option" data-type="Income"><input type="radio" name="type" value="Income"><span>↗</span> Income</label>
+          </div>
+          <div class="grid two">
+            <label>Date<input id="date" name="date" type="date" required></label>
+            <label>Amount<div class="amount-wrap"><span id="currency-prefix">AED</span><input id="amount" name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></div></label>
+          </div>
+          <div class="grid two">
+            <label>Currency<select id="currency" name="currency"><option>AED</option><option>INR</option><option>USD</option><option>OMR</option><option>SGD</option><option>EUR</option><option>GBP</option></select></label>
+            <label>Category<select id="category" name="category" required></select></label>
+          </div>
+          <div class="grid two" id="fx-row" hidden>
+            <label>FX rate to AED<input id="fx-rate" name="fxRate" type="number" min="0.000001" step="any" value="1" required></label>
+            <label>Base amount (AED)<input id="base-amount" type="text" readonly value="—"></label>
+          </div>
+          <label>Description<input id="description" name="description" maxlength="120" placeholder="e.g. Weekly groceries" required></label>
+          <div class="grid two">
+            <label>Payment type<select id="payment" name="payment"><option>Debit Card</option><option>Credit Card</option><option>Cash</option><option>Bank Transfer</option><option>Digital Wallet</option><option>Other</option></select></label>
+            <label>Spent by<select id="spent-by" name="spentBy"><option value="TEST_USER_1">Test User 1</option><option value="TEST_USER_2">Test User 2</option><option value="TEST_USER_3">Test User 3</option></select></label>
+          </div>
+          <label>Notes <span class="optional">Optional</span><textarea id="notes" name="notes" rows="2" maxlength="500" placeholder="Any extra details…"></textarea></label>
+          <div class="form-foot"><p>Recorded by: <b>Test User 1</b></p><button class="primary" type="submit">Add to test ledger <span>→</span></button></div>
+          <p id="form-message" class="message" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+      <aside class="side">
+        <section class="summary-card">
+          <p class="eyebrow">TEST LEDGER</p><div class="summary-number" id="total-count">0</div><p>Transactions captured in this browser</p>
+          <div class="summary-line"><span>Total expenses</span><b id="total-expense">AED 0.00</b></div>
+          <div class="summary-line"><span>Total income</span><b id="total-income">AED 0.00</b></div>
+        </section>
+        <section class="note-card"><span class="note-icon">ⓘ</span><div><b>Before you start</b><p>Entries are saved only in this browser for this prototype. They are not written to OneDrive or your Excel workbook.</p></div></section>
+        <button id="load-samples" class="secondary" type="button">Load 3 sample entries</button>
+      </aside>
+    </main>
+    <section class="panel ledger-panel">
+      <div class="panel-heading ledger-heading"><div><h2>Recent entries</h2><p>Your test transactions appear here.</p></div><div class="actions"><button id="export-csv" class="secondary small" type="button">Export CSV ↓</button><button id="clear-all" class="text-button" type="button">Clear test data</button></div></div>
+      <div class="table-wrap"><table><thead><tr><th>Date</th><th>Transaction</th><th>Category</th><th>Spent by</th><th>Payment</th><th class="right">Amount</th><th></th></tr></thead><tbody id="entries"><tr class="empty"><td colspan="7">No entries yet. Add one above or load the sample entries.</td></tr></tbody></table></div>
+    </section>
+    <footer>Smart Ledger · Prototype build · Test data stays on this device</footer>
+  </div>
+  <script src="./assets/js/entry-test.js" defer></script>
+</body>
+</html>
