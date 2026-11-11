@@ -127,10 +127,10 @@
     if(!result||typeof result!=="object"||typeof result.intent!=="string")throw new Error("The language provider returned an invalid intent.");
     if(result.intent==="transaction.create"){
       if(!Array.isArray(result.transactions)||result.transactions.length<1||result.transactions.length>20)throw new Error("The provider must return between 1 and 20 transaction drafts.");
-      return {intent:"transaction.create",transactions:result.transactions.map(item=>normalizeProviderDraft(item,{original:input})),source:"provider",clarification:null};
+      return {intent:"transaction.create",transactions:result.transactions.map(item=>normalizeProviderDraft(item,{original:input})),source:"provider",clarification:null,reply:typeof result.reply==="string"?result.reply.slice(0,240):""};
     }
     if(result.intent==="clarification"){
-      return {intent:"clarification",question:typeof result.question==="string"?result.question.slice(0,400):"Could you clarify the transaction?",source:"provider"};
+      return {intent:"clarification",question:typeof result.question==="string"&&result.question.trim()?result.question.slice(0,400):(typeof result.reply==="string"?result.reply.slice(0,400):"Could you clarify the transaction?"),reply:typeof result.reply==="string"?result.reply.slice(0,240):"",source:"provider"};
     }
     if(result.intent==="report.query"){
       const validDate=value=>{
@@ -147,10 +147,10 @@
       const category=typeof filters.category==="string"&&filters.category.trim()?filters.category.trim():null;
       const payment=["Cash","Debit Card","Credit Card","Bank Transfer","Digital Wallet","Other"].includes(filters.payment)?filters.payment:null;
       const groupBy=["category","payment"].includes(filters.groupBy)?filters.groupBy:null;
-      return {intent:"report.query",report:{period:proposed||{kind:"today",from:today,to:today},filters:{type,category,payment,groupBy}},source:"provider",text:String(input)};
+      return {intent:"report.query",report:{period:proposed||{kind:"today",from:today,to:today},filters:{type,category,payment,groupBy}},source:"provider",text:String(input),reply:typeof result.reply==="string"?result.reply.slice(0,240):""};
     }
     if(result.intent==="greeting"||result.intent==="help"||result.intent==="unknown"){
-      return {intent:result.intent,source:"provider",text:String(input)};
+      return {intent:result.intent,source:"provider",text:String(input),reply:typeof result.reply==="string"?result.reply.slice(0,240):""};
     }
     throw new Error("The language provider requested an unsupported finance action.");
   };
