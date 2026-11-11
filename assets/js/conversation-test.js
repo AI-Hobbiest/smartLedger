@@ -4,7 +4,8 @@
   const categories = ["Food/EatOut","Grocery","Apparel","Devotional","Travel","Misc/Others","Spiritual","Investments","Salary","Other Income","Refund"];
   const payments = ["Cash","Debit Card","Credit Card","Bank Transfer","Digital Wallet","Other"];
   let pending = null;
-  const todayISO = () => { const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+  const localISO = d => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0"); return y+"-"+m+"-"+day; };
+  const todayISO = () => localISO(new Date());
   const readRecords = () => { try { const v=JSON.parse(localStorage.getItem(KEY)||"[]"); return Array.isArray(v)?v:[]; } catch { return []; } };
   const writeRecords = rows => localStorage.setItem(KEY,JSON.stringify(rows));
   const escapeHtml = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -17,9 +18,9 @@
   const updateCount = () => $("entry-count").textContent=readRecords().length;
   const parseDate = text => {
     const t=text.toLowerCase(), now=new Date();
-    if(t.includes("day before yesterday")){now.setDate(now.getDate()-2);return now.toISOString().slice(0,10);}
-    if(t.includes("yesterday")){now.setDate(now.getDate()-1);return now.toISOString().slice(0,10);}
-    if(t.includes("tomorrow")){now.setDate(now.getDate()+1);return now.toISOString().slice(0,10);}
+    if(t.includes("day before yesterday")){now.setDate(now.getDate()-2);return localISO(now);}
+    if(t.includes("yesterday")){now.setDate(now.getDate()-1);return localISO(now);}
+    if(t.includes("tomorrow")){now.setDate(now.getDate()+1);return localISO(now);}
     const m=t.match(/\b(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?\b/);
     if(m){let y=m[3]?Number(m[3]):now.getFullYear();if(y<100)y+=2000;const d=new Date(y,Number(m[2])-1,Number(m[1]));if(!Number.isNaN(d.getTime()))return d.toISOString().slice(0,10);}
     return todayISO();
@@ -62,7 +63,7 @@
       '<label>Date<input id="r-date" type="date" value="'+escapeHtml(draft.date)+'"></label>'+
       '<label>Amount<input id="r-amount" type="number" min="0.01" step="0.01" value="'+draft.amount+'"></label>'+
       '<label>Currency<select id="r-currency">'+options(["AED","INR","USD","OMR","SGD","EUR","GBP"],draft.currency)+'</select></label>'+
-      '<label>Category<select id="r-category">'+options(categories,draft.category)+'</select></label>'+
+      '<label>Category<select id="r-category">'+options(categories,draft.category)+'</select></label>'+\n      '<label>FX rate to AED<input id="r-rate" type="number" min="0.000001" step="any" value="'+draft.fxRateToBase+'"></label>'+
       '<label>Payment<select id="r-payment">'+options(payments,draft.payment)+'</select></label>'+
       '<label class="wide">Description<input id="r-description" maxlength="120" value="'+escapeHtml(draft.description)+'"></label>'+
       '<label class="wide">Spent by<select id="r-spent">'+options(["TEST_USER_1","TEST_USER_2","TEST_USER_3"],draft.spentBy)+'</select></label>'+
@@ -70,12 +71,12 @@
       '</div><div id="base-preview" class="base-preview"></div>'+
       '<div class="review-actions"><button class="confirm-btn" id="confirm-entry" type="button">Confirm & save</button><button class="edit-cancel" id="cancel-entry" type="button">Cancel</button></div>';
     wrapper.append(card);$("chat").append(wrapper);$("chat").scrollTop=$("chat").scrollHeight;
-    const updatePreview=()=>{const curr=$("r-currency").value,amt=Number($("r-amount").value||0),rate=curr==="AED"?1:curr==="INR"?0.044:curr==="USD"?3.6725:curr==="OMR"?9.55:curr==="SGD"?2.75:curr==="EUR"?3.95:4.65;$("base-preview").textContent="Estimated base amount: AED "+(amt*rate).toFixed(2)+(curr!=="AED"?" · Indicative FX rate "+rate+"; verify before saving.":"");};
-    ["r-currency","r-amount"].forEach(id=>$(id).addEventListener("input",updatePreview));updatePreview();
+    const updatePreview=()=>{const curr=$("r-currency").value,amt=Number($("r-amount").value||0),rate=curr==="AED"?1:Number($("r-rate").value||0);$("base-preview").textContent="Estimated base amount: AED "+(amt*rate).toFixed(2)+(curr!=="AED"?" · FX rate is an editable estimate; verify before saving.":"");};
+    ["r-currency","r-amount","r-rate"].forEach(id=>$(id).addEventListener("input",updatePreview));$("r-currency").addEventListener("change",()=>{const rates={AED:1,INR:0.044,USD:3.6725,OMR:9.55,SGD:2.75,EUR:3.95,GBP:4.65};$("r-rate").value=rates[$("r-currency").value];updatePreview();});updatePreview();
     $("confirm-entry").addEventListener("click",()=>{
       const amount=Number($("r-amount").value),currency=$("r-currency").value;
-      if(!amount||amount<=0||!$("r-date").value||!$("r-description").value.trim()){addMessage("Please check the amount, date and description before saving.");return;}
-      const rate=currency==="AED"?1:currency==="INR"?0.044:currency==="USD"?3.6725:currency==="OMR"?9.55:currency==="SGD"?2.75:currency==="EUR"?3.95:4.65;
+      if(!amount||amount<=0||!$("r-date").value||!$("r-description").value.trim()||!rate||rate<=0){addMessage("Please check the amount, date and description before saving.");return;}
+      const rate=currency==="AED"?1:Number($("r-rate").value);
       const rows=readRecords(),now=new Date().toISOString(),spent=$("r-spent");
       const rec={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),date:$("r-date").value,type:$("r-type").value,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,category:$("r-category").value,description:$("r-description").value.trim(),payment:$("r-payment").value,spentBy:spent.value,spentByLabel:spent.options[spent.selectedIndex].text,recordedBy:"TEST_USER_1",tripId:"",notes:$("r-notes").value.trim(),createdAt:now,updatedAt:now};
       rows.push(rec);writeRecords(rows);card.innerHTML='<div class="review-head"><b>Saved to test ledger</b><span>CONFIRMED</span></div><div class="base-preview">'+escapeHtml(rec.type+" · "+rec.currency+" "+rec.amount.toFixed(2)+" · "+rec.description)+"<br>Base amount: AED "+rec.baseAmount.toFixed(2)+'</div>';pending=null;updateCount();addMessage("Done. I've added this transaction to your local test ledger. It is not synced to OneDrive.");$("chat").scrollTop=$("chat").scrollHeight;
