@@ -3,7 +3,7 @@
   const $ = id => document.getElementById(id);
   const categories = ["Food/EatOut","Grocery","Apparel","Devotional","Travel","Misc/Others","Spiritual","Investments","Salary","Other Income","Refund"];
   const payments = ["Cash","Debit Card","Credit Card","Bank Transfer","Digital Wallet","Other"];
-  let pending = null;
+  let pending = null, pendingCard = null, lastReportQuery = null, lastSavedId = null;
   const localISO = d => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0"); return y+"-"+m+"-"+day; };
   const todayISO = () => localISO(new Date());
   const readRecords = () => { try { const v=JSON.parse(localStorage.getItem(KEY)||"[]"); return Array.isArray(v)?v:[]; } catch { return []; } };
@@ -110,7 +110,7 @@
       '<label class="wide">Notes<input id="r-notes" maxlength="500" value="'+escapeHtml(draft.notes)+'" placeholder="Optional notes"></label>'+
       '</div><div id="base-preview" class="base-preview"></div>'+
       '<div class="review-actions"><button class="confirm-btn" id="confirm-entry" type="button">Confirm & save</button><button class="edit-cancel" id="cancel-entry" type="button">Cancel</button></div>';
-    wrapper.append(card);$("chat").append(wrapper);$("chat").scrollTop=$("chat").scrollHeight;
+    wrapper.append(card);$("chat").append(wrapper);pendingCard=card;$("chat").scrollTop=$("chat").scrollHeight;
     const updatePreview=()=>{const curr=$("r-currency").value,amt=Number($("r-amount").value||0),rate=curr==="AED"?1:Number($("r-rate").value||0);$("base-preview").textContent="Estimated base amount: AED "+(amt*rate).toFixed(2)+(curr!=="AED"?" · FX rate is an editable estimate; verify before saving.":"");};
     ["r-currency","r-amount","r-rate"].forEach(id=>$(id).addEventListener("input",updatePreview));$("r-currency").addEventListener("change",()=>{const rates={AED:1,INR:0.044,USD:3.6725,OMR:9.55,SGD:2.75,EUR:3.95,GBP:4.65};$("r-rate").value=rates[$("r-currency").value];updatePreview();});updatePreview();
     $("confirm-entry").addEventListener("click",()=>{
@@ -118,11 +118,34 @@
       if(!amount||amount<=0||!$("r-date").value||!$("r-description").value.trim()||!rate||rate<=0){addMessage("Please check the amount, date, description and FX rate before saving.");return;}
       const rows=readRecords(),now=new Date().toISOString(),spent=$("r-spent");
       const rec={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),date:$("r-date").value,type:$("r-type").value,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,category:$("r-category").value,description:$("r-description").value.trim(),payment:$("r-payment").value,spentBy:spent.value,spentByLabel:spent.options[spent.selectedIndex].text,recordedBy:"TEST_USER_1",tripId:"",notes:$("r-notes").value.trim(),createdAt:now,updatedAt:now};
-      rows.push(rec);writeRecords(rows);card.innerHTML='<div class="review-head"><b>Saved to test ledger</b><span>CONFIRMED</span></div><div class="base-preview">'+escapeHtml(rec.type+" · "+rec.currency+" "+rec.amount.toFixed(2)+" · "+rec.description)+"<br>Base amount: AED "+rec.baseAmount.toFixed(2)+'</div>';pending=null;updateCount();addMessage("Done. I've added this transaction to your local test ledger. It is not synced to OneDrive.");$("chat").scrollTop=$("chat").scrollHeight;
+      rows.push(rec);writeRecords(rows);lastSavedId=rec.id;card.innerHTML='<div class="review-head"><b>Saved to test ledger</b><span>CONFIRMED</span></div><div class="base-preview">'+escapeHtml(rec.type+" · "+rec.currency+" "+rec.amount.toFixed(2)+" · "+rec.description)+"<br>Base amount: AED "+rec.baseAmount.toFixed(2)+'</div>';pending=null;pendingCard=null;updateCount();addMessage("Done. I've added this transaction to your local test ledger. It is not synced to OneDrive.");$("chat").scrollTop=$("chat").scrollHeight;
     });
     $("cancel-entry").addEventListener("click",()=>{card.innerHTML='<b>Draft cancelled.</b><p>You can describe the transaction again whenever you’re ready.</p>';pending=null;});
   };
-  $("chat-form").addEventListener("submit",e=>{e.preventDefault();const text=$("prompt").value.trim();if(!text)return;addMessage(text,"user");$("prompt").value="";if(reportIntent(text)){answerReport(text);return;}const draft=parse(text);if(draft.error){addMessage(draft.error);return;}addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");renderReview(draft);});
+  const handleFollowUp = text => {
+    const lower=text.toLowerCase();
+    if(pending && /\\b(make that|change (it|that) to|set (it|the amount) to|actually)\\b/.test(lower)){
+      let changed=false;
+      const amount=lower.match(/\\b(?:make that|change (?:it|that) to|set (?:it|the amount) to)\\s*([0-9][0-9,]*(?:\\.\\d{1,2})?)/);
+      if(amount){pending.amount=Number(amount[1].replace(/,/g,""));pending.baseAmount=pending.amount*pending.fxRateToBase;changed=true;}
+      const pay=lower.match(/\\b(cash|credit card|debit card|bank transfer|digital wallet)\\b/);
+      if(pay){pending.payment=pay[1]==="credit card"?"Credit Card":pay[1]==="debit card"?"Debit Card":pay[1]==="bank transfer"?"Bank Transfer":pay[1]==="digital wallet"?"Digital Wallet":"Cash";changed=true;}
+      if(changed){if(pendingCard)pendingCard.innerHTML="<b>Draft updated.</b><p>The revised draft is shown below. Nothing has been saved yet.</p>";renderReview(pending);addMessage("I've updated the draft. Please review it again before confirming.");return true;}
+    }
+    const paymentMatch=lower.match(/\\b(cash|credit card|debit card|bank transfer|digital wallet)\\b/);
+    if(paymentMatch && /\\b(previous one|last one|last transaction|that transaction|that was|actually it was)\\b/.test(lower)){
+      const rows=readRecords(),idx=lastSavedId?rows.findIndex(r=>r.id===lastSavedId):rows.length-1;
+      if(idx>=0){rows[idx].payment=paymentMatch[1]==="credit card"?"Credit Card":paymentMatch[1]==="debit card"?"Debit Card":paymentMatch[1]==="bank transfer"?"Bank Transfer":paymentMatch[1]==="digital wallet"?"Digital Wallet":"Cash";rows[idx].updatedAt=new Date().toISOString();writeRecords(rows);addMessage("Updated the most recently saved transaction's payment method to "+rows[idx].payment+".");return true;}
+    }
+    if(lastReportQuery && /\\b(what about|how about|and)\\b/.test(lower) && /\\b(today|yesterday|tomorrow|this week|last week|this month|last month)\\b/.test(lower)){
+      const dateWords=lower.match(/\\b(today|yesterday|tomorrow|this week|last week|this month|last month)\\b/);
+      const revised=lastReportQuery.replace(/\\b(today|yesterday|tomorrow|this week|last week|this month|last month)\\b/gi,dateWords[1]);
+      answerReport(revised);return true;
+    }
+    if(lastReportQuery && /\\b(and by category|category breakdown|break it down by category)\\b/.test(lower)){answerReport(lastReportQuery+" by category");return true;}
+    return false;
+  };
+  $("chat-form").addEventListener("submit",e=>{e.preventDefault();const text=$("prompt").value.trim();if(!text)return;addMessage(text,"user");$("prompt").value="";if(handleFollowUp(text))return;if(reportIntent(text)){answerReport(text);return;}const draft=parse(text);if(draft.error){addMessage(draft.error);return;}addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");renderReview(draft);});
   document.querySelectorAll(".suggestion").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("chat-form").requestSubmit();}));
   $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;});
   $("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("chat-form").requestSubmit();}});
