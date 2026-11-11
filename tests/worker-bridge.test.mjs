@@ -22,6 +22,7 @@ const baseIntent = {
     category: "Food/EatOut", description: "Lunch", payment: "Cash", notes: ""
   }],
   question: "",
+  reply: "I have prepared the transaction for you to review.",
   period: { kind: "today", from: TODAY, to: TODAY },
   filters: { type: null, category: null, payment: null, groupBy: null }
 };
