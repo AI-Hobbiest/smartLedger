@@ -75,7 +75,7 @@
   const splitTransactionSegments = text => {
     // Split only when a conjunction is followed by another currency/amount.
     // This avoids splitting "lunch and groceries" when there is only one amount.
-    const delimiter= new RegExp("(?:\\\\s*(?:(?<![0-9]),|;|\\\\n)\\\\s*|\\\\s+(?:and|also|plus|then)\\\\s+)(?=(?:"+CURRENCY_PATTERN+"\\\\s*)?[0-9])","gi");
+    const delimiter= new RegExp("(?:\\s*(?:(?<![0-9]),|;|\\n)\\s*|\\s+(?:and|also|plus|then)\\s+)(?=(?:"+CURRENCY_PATTERN+"\\s*)?[0-9])","gi");
     return String(text||"").split(delimiter).map(part=>part.trim().replace(/^[,;\s]+|[,;\s]+$/g,"")).filter(Boolean);
   };
   const cleanDescription = (segment, amountMatch) => {
