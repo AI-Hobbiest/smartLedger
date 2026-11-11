@@ -6,7 +6,7 @@
   const cfg = window.SMART_LEDGER_RUNTIME || {};
   const endpoint = String(cfg.conversationApiUrl || "");
   const sitekey = String(cfg.turnstileSiteKey || "");
-  const configured = /^https:\/\/[a-z0-9.-]+\/api\/interpret$/i.test(endpoint)
+  const configured = /^https:\/\/smart-ledger-finance-ai\.[a-z0-9-]+\.workers\.dev\/api\/interpret$/i.test(endpoint)
     && !endpoint.includes("SET_CLOUDFLARE")
     && /^[A-Za-z0-9_-]{10,}$/.test(sitekey)
     && !sitekey.startsWith("SET_");
