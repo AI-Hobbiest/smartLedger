@@ -61,6 +61,8 @@
     const re=new RegExp(AMOUNT_RE.source,"gi");
     let m;
     while((m=re.exec(text))!==null){
+      const adjacent=text[m.index-1]||"",after=text[re.lastIndex]||"";
+      if(/[\/.-]/.test(adjacent)||/[\/.-]/.test(after))continue; // Ignore date components such as 11/11/2026.
       const amount=Number(m[1].replace(/,/g,""));
       if(Number.isFinite(amount)&&amount>0){
         const currency=currencyFrom(m[0]) || null;
@@ -73,7 +75,7 @@
   const splitTransactionSegments = text => {
     // Split only when a conjunction is followed by another currency/amount.
     // This avoids splitting "lunch and groceries" when there is only one amount.
-    const delimiter= new RegExp("(?:\\s*(?:;|\\n)\\s*|\\s+(?:and|also|plus|then)\\s+)(?=(?:"+CURRENCY_PATTERN+"\\s*)?[0-9])","gi");
+    const delimiter= new RegExp("(?:\\\\s*(?:(?<![0-9]),|;|\\\\n)\\\\s*|\\\\s+(?:and|also|plus|then)\\\\s+)(?=(?:"+CURRENCY_PATTERN+"\\\\s*)?[0-9])","gi");
     return String(text||"").split(delimiter).map(part=>part.trim().replace(/^[,;\s]+|[,;\s]+$/g,"")).filter(Boolean);
   };
   const cleanDescription = (segment, amountMatch) => {
@@ -88,7 +90,7 @@
     const match=parseAmountMatches(segment)[0] || options.amountMatch;
     if(!match)return null;
     const type=typeFrom(segment)==="Income"||options.sharedType==="Income"?"Income":"Expense";
-    const currency=match.currency||currencyFrom(segment)||options.sharedCurrency||currencyFrom(fullText)||"AED";
+    const currency=match.currency||currencyFrom(segment)||options.sharedCurrency||"AED";
     const date=dateFrom(/\b(today|yesterday|tomorrow|day before yesterday|\d{1,2}[\/.-]\d{1,2})\b/i.test(segment)?segment:fullText);
     const payment=paymentFrom(segment)!=="Other"?paymentFrom(segment):(options.sharedPayment||paymentFrom(fullText));
     const description=cleanDescription(segment,match);
@@ -150,7 +152,7 @@
         if(!amounts.length)return {intent:"clarification",source:"local-fallback",question:"I couldn't identify an amount. What amount should I record?"};
         const segments=splitTransactionSegments(text);
         const usable=segments.length>1?segments.filter(segment=>parseAmountMatches(segment).length>0):[text];
-        const sharedType=typeFrom(text),sharedCurrency=currencyFrom(text),sharedPayment=paymentFrom(text);
+        const sharedType=typeFrom(text),sharedCurrency=amounts[0].currency,sharedPayment=paymentFrom(text);
         const transactions=usable.map(segment=>makeDraft(segment,text,{sharedType,sharedCurrency,sharedPayment})).filter(Boolean);
         if(!transactions.length)return {intent:"clarification",source:"local-fallback",question:"I found a number, but couldn't confidently turn it into a transaction. Could you describe the amount and what it was for?"};
         return {intent:"transaction.create",transactions,source:"local-fallback",clarification:null,confidence:"heuristic"};
