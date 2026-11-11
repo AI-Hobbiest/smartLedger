@@ -197,7 +197,7 @@ function validateIntentResult(result, today) {
   };
 }
 
-async function verifyTurnstile(token, request, env) {
+async async function verifyTurnstile(token, request, env) {
   if (!token || typeof token !== "string" || token.length > 2048) return false;
   const body = new URLSearchParams({
     secret: env.TURNSTILE_SECRET_KEY,
