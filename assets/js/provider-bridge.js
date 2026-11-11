@@ -86,7 +86,9 @@
     async interpret(request) {
       const token = await getTurnstileToken();
       const history = Array.isArray(window.SmartLedgerConversationHistory)
-        ? window.SmartLedgerConversationHistory.slice(-12) : [];
+        ? window.SmartLedgerConversationHistory
+            .filter(item => item && item.role === "user" && typeof item.content === "string")
+            .slice(-6) : [];
       let response;
       try {
         response = await fetch(endpoint, {
