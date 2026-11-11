@@ -116,7 +116,7 @@
     const rate=Number.isFinite(fx)&&fx>0?fx:(RATES[currency]||1);
     return {type,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,date,category,description,payment,spentBy:"TEST_USER_1",spentByLabel:"Test User 1",notes:typeof raw.notes==="string"?raw.notes.slice(0,500):"",original:String(defaults.original||""),source:"provider"};
   };
-  const validateProviderResult = (result, input) => {
+  const validateProviderResult = (result, input, conversation={}) => {
     if(!result||typeof result!=="object"||typeof result.intent!=="string")throw new Error("The language provider returned an invalid intent.");
     if(result.intent==="transaction.create"){
       if(!Array.isArray(result.transactions)||result.transactions.length<1||result.transactions.length>20)throw new Error("The provider must return between 1 and 20 transaction drafts.");
@@ -125,7 +125,24 @@
     if(result.intent==="clarification"){
       return {intent:"clarification",question:typeof result.question==="string"?result.question.slice(0,400):"Could you clarify the transaction?",source:"provider"};
     }
-    if(result.intent==="report.query"||result.intent==="greeting"||result.intent==="help"||result.intent==="unknown"){
+    if(result.intent==="report.query"){
+      const validDate=value=>{
+        if(typeof value!=="string"||!/^\\d{4}-\\d{2}-\\d{2}$/.test(value))return false;
+        const d=new Date(value+"T00:00:00Z");
+        return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===value;
+      };
+      const proposed=result.period&&validDate(result.period.from)&&validDate(result.period.to)&&result.period.from<=result.period.to
+        ?{kind:typeof result.period.kind==="string"?result.period.kind:"custom",from:result.period.from,to:result.period.to}
+        :conversation.report&&conversation.report.period?conversation.report.period:null;
+      const today=localISO(new Date());
+      const filters=result.filters&&typeof result.filters==="object"?result.filters:{};
+      const type=["Expense","Income","All"].includes(filters.type)?filters.type:null;
+      const category=typeof filters.category==="string"&&filters.category.trim()?filters.category.trim():null;
+      const payment=["Cash","Debit Card","Credit Card","Bank Transfer","Digital Wallet","Other"].includes(filters.payment)?filters.payment:null;
+      const groupBy=["category","payment"].includes(filters.groupBy)?filters.groupBy:null;
+      return {intent:"report.query",report:{period:proposed||{kind:"today",from:today,to:today},filters:{type,category,payment,groupBy}},source:"provider",text:String(input)};
+    }
+    if(result.intent==="greeting"||result.intent==="help"||result.intent==="unknown"){
       return {intent:result.intent,source:"provider",text:String(input)};
     }
     throw new Error("The language provider requested an unsupported finance action.");
@@ -139,7 +156,7 @@
         if(provider&&typeof provider.interpret==="function"){
           try{
             const result=await provider.interpret({message:text,context:conversation,schemaVersion:"1.0"});
-            return validateProviderResult(result,text);
+            return validateProviderResult(result,text,conversation);
           }catch(error){
             return {intent:"provider.error",source:"provider",message:"I couldn't safely interpret that message. Please rephrase it or use the form entry.",detail:String(error&&error.message||error)};
           }
