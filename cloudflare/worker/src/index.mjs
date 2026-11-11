@@ -212,7 +212,7 @@ async function verifyTurnstile(token, request, env) {
   });
   if (!response.ok) return false;
   const result = await response.json();
-  return result.success === true && result.hostname === env.ALLOWED_HOSTNAME;
+  return result.success === true && result.hostname === env.ALLOWED_HOSTNAME && result.action === "smart_ledger_chat";
 }
 
 async function callGroq(input, env, local) {
@@ -316,11 +316,15 @@ export default {
       return jsonResponse({ error: "Smart Ledger is receiving too many requests from this connection. Please wait a minute and try again." }, 429, allowedOrigin);
     }
 
-    const contentLength = Number(request.headers.get("Content-Length") || "0");
-    if (contentLength > MAX_BODY_BYTES) return jsonResponse({ error: "Message is too large." }, 413, allowedOrigin);
+    let rawBody;
+    try { rawBody = await request.text(); }
+    catch { return jsonResponse({ error: "Invalid request body." }, 400, allowedOrigin); }
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
+      return jsonResponse({ error: "Message is too large." }, 413, allowedOrigin);
+    }
 
     let input;
-    try { input = await request.json(); }
+    try { input = JSON.parse(rawBody); }
     catch { return jsonResponse({ error: "Invalid request body." }, 400, allowedOrigin); }
 
     if (!input || typeof input.message !== "string" || !input.message.trim() || input.message.length > MAX_MESSAGE_CHARS) {
