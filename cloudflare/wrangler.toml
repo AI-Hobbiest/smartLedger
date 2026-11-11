@@ -7,7 +7,6 @@ send_metrics = false
 [vars]
 ALLOWED_ORIGIN = "https://ai-hobbiest.github.io"
 ALLOWED_HOSTNAME = "ai-hobbiest.github.io"
-GROQ_MODEL = "openai/gpt-oss-20b"
 
 [[ratelimits]]
 name = "CHAT_LIMITER"
