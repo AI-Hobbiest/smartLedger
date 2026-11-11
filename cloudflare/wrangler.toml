@@ -1,0 +1,18 @@
+name = "smart-ledger-finance-ai"
+main = "worker/src/index.mjs"
+compatibility_date = "2026-11-11"
+workers_dev = true
+send_metrics = false
+
+[vars]
+ALLOWED_ORIGIN = "https://ai-hobbiest.github.io"
+ALLOWED_HOSTNAME = "ai-hobbiest.github.io"
+GROQ_MODEL = "openai/gpt-oss-20b"
+
+[[ratelimits]]
+name = "CHAT_LIMITER"
+namespace_id = "1001"
+
+[ratelimits.simple]
+limit = 10
+period = 60
