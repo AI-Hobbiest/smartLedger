@@ -165,7 +165,8 @@
             const result=await provider.interpret({message:text,context:conversation,schemaVersion:"1.0"});
             return validateProviderResult(result,text,conversation);
           }catch(error){
-            return {intent:"provider.error",source:"provider",message:"I couldn't safely interpret that message. Please rephrase it or use the form entry.",detail:String(error&&error.message||error)};
+            const safeMessage=String(error&&error.message||"The free AI service is temporarily unavailable. Your message was not saved.");
+            return {intent:"provider.error",source:"provider",message:safeMessage.slice(0,400)};
           }
         }
         const route=window.SmartLedgerContext?window.SmartLedgerContext.create().route(text):{intent:"unknown"};
