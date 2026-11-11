@@ -66,27 +66,37 @@
     const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
     return {from:localISO(start),to:localISO(start)};
   };
-  const answerReport = text => {
+  const answerReport = (text, reportContext=null) => {
     lastReportQuery=text;
-    const range=reportRange(text), lower=text.toLowerCase();
+    const spec=reportContext||context.getReport();
+    const range=spec&&spec.period?{from:spec.period.from,to:spec.period.to}:reportRange(text);
+    const filters=spec&&spec.filters?spec.filters:{};
     const all=readRecords();
-    const rows=all.filter(r=>r.date>=range.from&&r.date<=range.to);
+    let rows=all.filter(r=>r.date>=range.from&&r.date<=range.to);
+    if(filters.type && filters.type!=="All")rows=rows.filter(r=>r.type===filters.type);
+    if(filters.category)rows=rows.filter(r=>(r.category||"Misc/Others")===filters.category);
+    if(filters.payment)rows=rows.filter(r=>(r.payment||"Other")===filters.payment);
     const expenses=rows.filter(r=>r.type==="Expense"), incomes=rows.filter(r=>r.type==="Income");
     const base=r=>Number.isFinite(Number(r.baseAmount))?Number(r.baseAmount):Number(r.amount||0)*Number(r.fxRateToBase||1);
-    const expenseTotal=expenses.reduce((s,r)=>s+base(r),0), incomeTotal=incomes.reduce((s,r)=>s+base(r),0);
+    const expenseTotal=expenses.reduce((sum,r)=>sum+base(r),0), incomeTotal=incomes.reduce((sum,r)=>sum+base(r),0);
     const net=incomeTotal-expenseTotal;
     const label=range.from===range.to?range.from:range.from+" to "+range.to;
-    if(!rows.length){addMessage("I couldn't find any saved transactions for "+label+". Once you add entries, I can summarise them here.");return;}
+    if(!rows.length){addMessage("I couldn't find any saved transactions matching that request for "+label+". Try widening the date range or removing a filter.");return;}
     const lines=["Your ledger summary · "+label,"","Expenses: "+moneyAED(expenseTotal)+" ("+expenses.length+" entries)","Income: "+moneyAED(incomeTotal)+" ("+incomes.length+" entries)","Net: "+(net<0?"−":"+")+moneyAED(Math.abs(net))];
-    if(expenses.length){
-      const byCategory={};expenses.forEach(r=>{const k=r.category||"Uncategorised";byCategory[k]=(byCategory[k]||0)+base(r);});
+    if(expenses.length && (!filters.groupBy || filters.groupBy==="category")){
+      const byCategory={};expenses.forEach(r=>{const key=r.category||"Uncategorised";byCategory[key]=(byCategory[key]||0)+base(r);});
       lines.push("","Expense breakdown:");
-      Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>lines.push("• "+k+": "+moneyAED(v)));
+      Object.entries(byCategory).sort((x,y)=>y[1]-x[1]).forEach(([key,value])=>lines.push("• "+key+": "+moneyAED(value)));
     }
-    const expenseOnly=/\b(expense|expenses|spent|spending)\b/i.test(text)&&!/\b(income|overall|all transactions)\b/i.test(text);
-    const shown=(expenseOnly?expenses:rows).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,8);
+    if(filters.groupBy==="payment" && rows.length){
+      const byPayment={};rows.forEach(r=>{const key=r.payment||"Other";byPayment[key]=(byPayment[key]||0)+base(r);});
+      lines.push("","Payment breakdown:");
+      Object.entries(byPayment).sort((x,y)=>y[1]-x[1]).forEach(([key,value])=>lines.push("• "+key+": "+moneyAED(value)));
+    }
+    const expenseOnly=filters.type==="Expense" || (/\\b(expense|expenses|spent|spend|spending)\\b/i.test(text)&&!filters.type);
+    const shown=(expenseOnly?expenses:rows).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")).slice(0,8);
     if(shown.length){lines.push("","Transactions"+(shown.length===8?" (latest 8)":"")+":");shown.forEach(r=>lines.push("• "+r.date+" · "+(r.description||r.category||"Transaction")+" · "+r.currency+" "+Number(r.amount||0).toFixed(2)+" ("+moneyAED(base(r))+")"));}
-    addMessage(lines.join("\n"));
+    addMessage(lines.join("\\n"));
   };
   const renderReview = draft => {
     pending=draft;
