@@ -53,7 +53,7 @@
     return {date:parseDate(text),type,amount,currency,fxRateToBase:fx,baseAmount:amount*fx,category:inferCategory(text,type,merchant),description,payment,spentBy:"TEST_USER_1",spentByLabel:"Test User 1",notes:"",original:text};
   };
   const moneyAED = value => "AED "+Number(value||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-  const reportIntent = text => /\b(summary|summar(y|ise|ize)|report|breakdown|how much|total|show|list|what did i spend|expenses? today|transactions?)\b/i.test(text);
+  const reportIntent = text => { const t=text.toLowerCase(); return /\b(summary|summar(y|ise|ize)|report|breakdown|how much|total|show|list|what did i spend|transactions?)\b/i.test(t) || (/\b(expense|expenses|spend|spending)\b/i.test(t) && (/\b(today|yesterday|this week|last week|this month|last month|last 7 days|past 7 days)\b/i.test(t) || /\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?\b/.test(t))); };
   const reportRange = text => {
     const lower=text.toLowerCase(), now=new Date();
     let start=new Date(now.getFullYear(),now.getMonth(),now.getDate()), end=new Date(start);
