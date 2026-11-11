@@ -82,7 +82,10 @@
     const net=incomeTotal-expenseTotal;
     const label=range.from===range.to?range.from:range.from+" to "+range.to;
     if(!rows.length){addMessage("I couldn't find any saved transactions matching that request for "+label+". Try widening the date range or removing a filter.");return;}
-    const lines=["Your ledger summary · "+label,"","Expenses: "+moneyAED(expenseTotal)+" ("+expenses.length+" entries)","Income: "+moneyAED(incomeTotal)+" ("+incomes.length+" entries)","Net: "+(net<0?"−":"+")+moneyAED(Math.abs(net))];
+    const lines=["Your ledger summary · "+label];
+    if(filters.type==="Expense")lines.push("","Expenses: "+moneyAED(expenseTotal)+" ("+expenses.length+" entries)");
+    else if(filters.type==="Income")lines.push("","Income: "+moneyAED(incomeTotal)+" ("+incomes.length+" entries)");
+    else lines.push("","Expenses: "+moneyAED(expenseTotal)+" ("+expenses.length+" entries)","Income: "+moneyAED(incomeTotal)+" ("+incomes.length+" entries)","Net: "+(net<0?"−":"+")+moneyAED(Math.abs(net)));
     if(expenses.length && (!filters.groupBy || filters.groupBy==="category")){
       const byCategory={};expenses.forEach(r=>{const key=r.category||"Uncategorised";byCategory[key]=(byCategory[key]||0)+base(r);});
       lines.push("","Expense breakdown:");
