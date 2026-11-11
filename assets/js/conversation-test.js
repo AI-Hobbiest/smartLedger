@@ -99,7 +99,7 @@
     addMessage(lines.join("\n"));
   };
   const renderReview = draft => {
-    pending=draft;
+    pending=draft;context.setPending(draft);
     const wrapper=document.createElement("div");wrapper.className="message assistant";
     const card=document.createElement("div");card.className="review-card";
     const options=(arr,selected)=>arr.map(v=>'<option '+(v===selected?'selected':'')+' value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join("");
@@ -168,7 +168,7 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
   };
   $("chat-form").addEventListener("submit",e=>{e.preventDefault();const text=$("prompt").value.trim();if(!text)return;addMessage(text,"user");$("prompt").value="";const route=context.route(text);if(route.intent==="greeting"){handleGreeting(text);return;}if(route.intent==="correction" && handleFollowUp(text))return;if(route.intent==="report"){answerReport(text,route.report);return;}if(handleFollowUp(text))return;lastReportQuery=null;const draft=parse(text);if(draft.error){addMessage(draft.error);return;}addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");renderReview(draft);});
   document.querySelectorAll(".suggestion").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("chat-form").requestSubmit();}));
-  $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;});
+  $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;pendingCard=null;lastReportQuery=null;lastSavedId=null;context.clear();});
   $("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("chat-form").requestSubmit();}});
   updateCount();
 })();
