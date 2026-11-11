@@ -21,5 +21,7 @@ jobs:
           node --check assets/js/context-engine.js
           node --check assets/js/intent-adapter.js
           node --check assets/js/conversation-test.js
+          node --check assets/js/provider-bridge.js
+          node --check cloudflare/worker/src/index.mjs
       - name: Run finance conversation scenarios
-        run: node --test tests/context-engine.test.cjs tests/intent-adapter.test.cjs
+        run: node --test tests/context-engine.test.cjs tests/intent-adapter.test.cjs tests/worker-bridge.test.mjs
