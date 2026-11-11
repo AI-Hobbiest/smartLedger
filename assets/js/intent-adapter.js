@@ -9,26 +9,26 @@
   "use strict";
   const CURRENCIES = ["AED","INR","USD","OMR","SGD","EUR","GBP"];
   const RATES = {AED:1,INR:0.044,USD:3.6725,OMR:9.55,SGD:2.75,EUR:3.95,GBP:4.65};
-  const CURRENCY_PATTERN = "(?:AED|DHS?|DIRHAMS?|INR|RS\\\\.?|RUPEES?|USD|OMR|SGD|EUR|GBP|\\\\$)";
-  const AMOUNT_RE = new RegExp("(?:\\\\b"+CURRENCY_PATTERN+"\\\\s*)?([0-9][0-9,]*(?:\\\\.[0-9]{1,2})?)(?:\\\\s*"+CURRENCY_PATTERN+")?","gi");
-  const clean = value => String(value || "").replace(/[’]/g,"'").replace(/\\s+/g," ").trim();
+  const CURRENCY_PATTERN = "(?:AED|DHS?|DIRHAMS?|INR|RS\\.?|RUPEES?|USD|OMR|SGD|EUR|GBP|\\$)";
+  const AMOUNT_RE = new RegExp("(?:\\b"+CURRENCY_PATTERN+"\\s*)?([0-9][0-9,]*(?:\\.[0-9]{1,2})?)(?:\\s*"+CURRENCY_PATTERN+")?","gi");
+  const clean = value => String(value || "").replace(/[’]/g,"'").replace(/\s+/g," ").trim();
   const localISO = d => [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
   const currencyFrom = text => {
-    const match=String(text||"").match(/\\b(aed|dhs?|dirhams?|inr|rs\\.?|rupees?|usd|omr|sgd|eur|gbp)\\b|\\$/i);
+    const match=String(text||"").match(/\b(aed|dhs?|dirhams?|inr|rs\.?|rupees?|usd|omr|sgd|eur|gbp)\b|\$/i);
     if(!match)return null;
     const token=match[0].toLowerCase();
-    if(/^(inr|rs\\.?|rupees?)$/.test(token))return "INR";
+    if(/^(inr|rs\.?|rupees?)$/.test(token))return "INR";
     if(token==="$"||token==="usd")return "USD";
     return token==="omr"?"OMR":token==="sgd"?"SGD":token==="eur"?"EUR":token==="gbp"?"GBP":"AED";
   };
-  const typeFrom = text => /\\b(received|salary|income|earned|credited|reimbursement|refund|cashback|reimbursed)\\b/i.test(text)?"Income":"Expense";
+  const typeFrom = text => /\b(received|salary|income|earned|credited|reimbursement|refund|cashback|reimbursed)\b/i.test(text)?"Income":"Expense";
   const paymentFrom = text => {
     const t=String(text||"").toLowerCase();
-    if(/credit card|\\bcc\\b/.test(t))return "Credit Card";
+    if(/credit card|\bcc\b/.test(t))return "Credit Card";
     if(/debit card/.test(t))return "Debit Card";
     if(/bank transfer|transferred/.test(t))return "Bank Transfer";
     if(/digital wallet|wallet|apple pay|google pay/.test(t))return "Digital Wallet";
-    if(/\\bcash\\b/.test(t))return "Cash";
+    if(/\bcash\b/.test(t))return "Cash";
     return "Other";
   };
   const dateFrom = text => {
@@ -36,7 +36,7 @@
     if(/day before yesterday/.test(t))d.setDate(d.getDate()-2);
     else if(/yesterday/.test(t))d.setDate(d.getDate()-1);
     else if(/tomorrow/.test(t))d.setDate(d.getDate()+1);
-    const numeric=t.match(/\\b(\\d{1,2})[\\/.-](\\d{1,2})(?:[\\/.-](\\d{2,4}))?\\b/);
+    const numeric=t.match(/\b(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?\b/);
     if(numeric){let year=numeric[3]?Number(numeric[3]):d.getFullYear();if(year<100)year+=2000;const value=new Date(year,Number(numeric[2])-1,Number(numeric[1]));if(value.getFullYear()===year&&value.getMonth()===Number(numeric[2])-1&&value.getDate()===Number(numeric[1]))return localISO(value);}
     return localISO(d);
   };
@@ -73,15 +73,15 @@
   const splitTransactionSegments = text => {
     // Split only when a conjunction is followed by another currency/amount.
     // This avoids splitting "lunch and groceries" when there is only one amount.
-    const delimiter= new RegExp("(?:\\\\s*(?:;|\\\\n)\\\\s*|\\\\s+(?:and|also|plus|then)\\\\s+)(?=(?:"+CURRENCY_PATTERN+"\\\\s*)?[0-9])","gi");
-    return String(text||"").split(delimiter).map(part=>part.trim().replace(/^[,;\\s]+|[,;\\s]+$/g,"")).filter(Boolean);
+    const delimiter= new RegExp("(?:\\s*(?:;|\\n)\\s*|\\s+(?:and|also|plus|then)\\s+)(?=(?:"+CURRENCY_PATTERN+"\\s*)?[0-9])","gi");
+    return String(text||"").split(delimiter).map(part=>part.trim().replace(/^[,;\s]+|[,;\s]+$/g,"")).filter(Boolean);
   };
   const cleanDescription = (segment, amountMatch) => {
     let value=String(segment||"");
     if(amountMatch)value=value.replace(amountMatch.raw," ");
-    value=value.replace(/\\b(i|we|my|our|spent|spend|paid|pay|purchase|purchased|bought|for|on|at|in|using|with|today|yesterday|tomorrow|day before yesterday|received|salary|income|earned|credited|reimbursement|reimbursed|refund|cashback|expense|of|and|also|plus|then|aed|dhs?|dirhams?|inr|rs\\.?|rupees?|usd|omr|sgd|eur|gbp)\\b/gi," ");
-    value=value.replace(/\\b(credit card|debit card|bank transfer|digital wallet|cash|wallet|cc)\\b/gi," ");
-    value=value.replace(/\\$|[,;.!?]/g," ").replace(/\\s+/g," ").trim();
+    value=value.replace(/\b(i|we|my|our|spent|spend|paid|pay|purchase|purchased|bought|for|on|at|in|using|with|today|yesterday|tomorrow|day before yesterday|received|salary|income|earned|credited|reimbursement|reimbursed|refund|cashback|expense|of|and|also|plus|then|aed|dhs?|dirhams?|inr|rs\.?|rupees?|usd|omr|sgd|eur|gbp)\b/gi," ");
+    value=value.replace(/\b(credit card|debit card|bank transfer|digital wallet|cash|wallet|cc)\b/gi," ");
+    value=value.replace(/\$|[,;.!?]/g," ").replace(/\s+/g," ").trim();
     return value?value.charAt(0).toUpperCase()+value.slice(1):"Transaction";
   };
   const makeDraft = (segment, fullText, options={}) => {
@@ -89,7 +89,7 @@
     if(!match)return null;
     const type=typeFrom(segment)==="Income"||options.sharedType==="Income"?"Income":"Expense";
     const currency=match.currency||currencyFrom(segment)||options.sharedCurrency||currencyFrom(fullText)||"AED";
-    const date=dateFrom(/\\b(today|yesterday|tomorrow|day before yesterday|\\d{1,2}[\\/.-]\\d{1,2})\\b/i.test(segment)?segment:fullText);
+    const date=dateFrom(/\b(today|yesterday|tomorrow|day before yesterday|\d{1,2}[\/.-]\d{1,2})\b/i.test(segment)?segment:fullText);
     const payment=paymentFrom(segment)!=="Other"?paymentFrom(segment):(options.sharedPayment||paymentFrom(fullText));
     const description=cleanDescription(segment,match);
     const category=categoryFrom(segment+" "+description,type);
@@ -105,7 +105,7 @@
     const type=raw.type==="Income"?"Income":raw.type==="Expense"?"Expense":null;
     const amount=Number(raw.amount);
     const currency=CURRENCIES.includes(String(raw.currency||"").toUpperCase())?String(raw.currency).toUpperCase():null;
-    const date=typeof raw.date==="string"&&/^\\d{4}-\\d{2}-\\d{2}$/.test(raw.date)?raw.date:null;
+    const date=typeof raw.date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(raw.date)?raw.date:null;
     if(!type||!Number.isFinite(amount)||amount<=0||!currency||!date)throw new Error("The language provider draft is missing a valid type, positive amount, currency or date.");
     const category=typeof raw.category==="string"&&raw.category.trim()?raw.category.trim():"Misc/Others";
     const payment=["Cash","Debit Card","Credit Card","Bank Transfer","Digital Wallet","Other"].includes(raw.payment)?raw.payment:"Other";
