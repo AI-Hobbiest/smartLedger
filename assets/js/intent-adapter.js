@@ -27,11 +27,6 @@
     const expense=/\b(spent|spend|paid|pay|purchase|purchased|bought|expense|expenses)\b/i.test(t);
     return income===expense?null:(income?"Income":"Expense");
   };
-    const t=String(text||"");
-    const income=/\b(received|salary|income|earned|credited|reimbursement|refund|cashback|reimbursed)\b/i.test(t);
-    const expense=/\b(spent|spend|paid|pay|purchase|purchased|bought|expense|expenses)\b/i.test(t);
-    return income===expense?null:(income?"Income":"Expense");
-  };
   const paymentFrom = text => {
     const t=String(text||"").toLowerCase();
     if(/credit card|\bcc\b/.test(t))return "Credit Card";
