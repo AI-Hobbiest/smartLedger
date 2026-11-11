@@ -66,3 +66,34 @@ test("provider cannot return unsupported actions or invalid amounts", async () =
     type:"Expense",amount:-5,currency:"AED",date:"2026-11-11"
   }]},"bad"),/positive amount/i);
 });
+
+
+test("comma-separated transactions are split without splitting thousands separators", async () => {
+  const result=await adapterApi.create().interpret("Spent AED 1,250 on groceries, 35 AED on lunch");
+  assert.equal(result.transactions.length,2);
+  assert.deepEqual(result.transactions.map(x=>x.amount),[1250,35]);
+});
+
+test("numeric transaction dates are not misread as extra transaction amounts", async () => {
+  const result=await adapterApi.create().interpret("Spent AED 25 on lunch on 10/11/2026");
+  assert.equal(result.transactions.length,1);
+  assert.equal(result.transactions[0].amount,25);
+  assert.equal(result.transactions[0].date,"2026-11-10");
+});
+
+test("provider report filters and date ranges are validated and normalized", async () => {
+  const provider={interpret:async()=>({intent:"report.query",period:{kind:"month",from:"2026-11-01",to:"2026-11-30"},filters:{type:"Expense",category:"Grocery",payment:"Cash",groupBy:"category"}})};
+  const result=await adapterApi.create({provider}).interpret("How much did I spend on groceries in November?");
+  assert.equal(result.intent,"report.query");
+  assert.equal(result.report.period.from,"2026-11-01");
+  assert.equal(result.report.filters.type,"Expense");
+  assert.equal(result.report.filters.category,"Grocery");
+  assert.equal(result.report.filters.payment,"Cash");
+});
+
+test("invalid provider report dates fall back to the prior context rather than corrupting ranges", async () => {
+  const provider={interpret:async()=>({intent:"report.query",period:{from:"2026-02-31",to:"2026-03-01"},filters:{type:"Expense"}})};
+  const result=await adapterApi.create({provider}).interpret("What did I spend?",{report:{period:{kind:"lastMonth",from:"2026-10-01",to:"2026-10-31"}}});
+  assert.equal(result.report.period.from,"2026-10-01");
+  assert.equal(result.report.period.to,"2026-10-31");
+});
