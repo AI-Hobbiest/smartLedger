@@ -22,7 +22,7 @@
     if(t.includes("yesterday")){now.setDate(now.getDate()-1);return localISO(now);}
     if(t.includes("tomorrow")){now.setDate(now.getDate()+1);return localISO(now);}
     const m=t.match(/\b(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?\b/);
-    if(m){let y=m[3]?Number(m[3]):now.getFullYear();if(y<100)y+=2000;const d=new Date(y,Number(m[2])-1,Number(m[1]));if(!Number.isNaN(d.getTime()))return d.toISOString().slice(0,10);}
+    if(m){let y=m[3]?Number(m[3]):now.getFullYear();if(y<100)y+=2000;const d=new Date(y,Number(m[2])-1,Number(m[1]));if(!Number.isNaN(d.getTime()))return localISO(d);}
     return todayISO();
   };
   const inferCategory = (text,type,merchant) => {
