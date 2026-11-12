@@ -55,9 +55,12 @@
     }
   };
 
-  const initializeWidget = async () => {
-    await waitForTurnstileApi();
-    if (widgetId !== null) return widgetId;
+  const initializeWidget = () => {
+    if (widgetId !== null) return Promise.resolve(widgetId);
+    if (initializationPromise) return initializationPromise;
+    initializationPromise = (async () => {
+      await waitForTurnstileApi();
+      if (widgetId !== null) return widgetId;
 
     setStatus("Loading security verification", "Cloudflare Turnstile is starting. The check should complete automatically.");
     widgetId = window.turnstile.render("#turnstile-holder", {
@@ -117,7 +120,12 @@
       widgetId = null;
       throw new Error("Cloudflare could not create the security widget. Refresh the page and try again.");
     }
-    return widgetId;
+      return widgetId;
+    })().catch(error => {
+      initializationPromise = null;
+      throw error;
+    });
+    return initializationPromise;
   };
 
   const waitForToken = async () => {
@@ -197,8 +205,7 @@
   });
 
   // Start verification when the page opens rather than waiting for the first send.
-  initializationPromise = initializeWidget();
-  initializationPromise.catch(error => {
+  initializeWidget().catch(error => {
     setStatus("Security verification unavailable", String(error && error.message || error));
   });
 })();
