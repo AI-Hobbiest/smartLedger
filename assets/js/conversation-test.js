@@ -262,7 +262,18 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     const route=context.route(text);
     if(route.intent==="greeting"){handleGreeting(text);return;}
     if(route.intent==="correction" && handleFollowUp(text))return;
-    if(!intentAdapter.hasProvider() && route.intent==="report"){answerReport(text,route.report);return;}
+    if(route.intent==="report"){
+      const reportSpec=route.report || context.getReport();
+      if(!reportSpec || !reportSpec.period){
+        lastReportQuery=text;
+        addMessage("Of course. Which period should I use — today, this month, or all available history?");
+        return;
+      }
+      // Report filtering and follow-ups are deterministic local operations; the AI
+      // must never invent totals or decide which saved ledger rows exist.
+      answerReport(text,reportSpec);
+      return;
+    }
     if(handleFollowUp(text))return;
     lastReportQuery=null;
     const interpreted=await intentAdapter.interpret(text,context.snapshot());
