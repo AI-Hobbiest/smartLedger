@@ -118,7 +118,7 @@
     if(!type||!Number.isFinite(amount)||amount<=0||!currency||!date)throw new Error("The language provider draft is missing a valid type, positive amount, currency or date.");
     const allowedCategories=["Food/EatOut","Grocery","Apparel","Devotional","Travel","Misc/Others","Spiritual","Investments","Salary","Other Income","Refund"];
     const category=allowedCategories.includes(raw.category)?raw.category:"Misc/Others";
-    const payment=["Cash","Debit Card","Credit Card","Bank Transfer","Digital Wallet","Other"].includes(raw.payment)?raw.payment:"Other";
+    const payment=["Cash","Debit Card","Credit Card","Bank Transfer","Digital Wallet","Other"].includes(raw.payment)?raw.payment:null;
     const description=typeof raw.description==="string"&&raw.description.trim()?raw.description.trim().slice(0,120):"Transaction";
     const rate=RATES[currency]||1; // The language provider never controls FX calculations.
     return {type,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,date,category,description,payment,spentBy:"TEST_USER_1",spentByLabel:"Test User 1",notes:typeof raw.notes==="string"?raw.notes.slice(0,500):"",original:String(defaults.original||""),source:"provider"};
