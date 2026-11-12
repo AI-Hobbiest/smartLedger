@@ -31,7 +31,7 @@ const RESPONSE_SCHEMA = {
           date: { type: "string" },
           category: { type: "string", enum: CATEGORIES },
           description: { type: "string" },
-          payment: { type: "string", enum: PAYMENTS },
+          payment: nullableEnum(PAYMENTS),
           notes: { type: "string" }
         },
         required: ["type", "amount", "currency", "date", "category", "description", "payment", "notes"],
@@ -72,7 +72,7 @@ const SYSTEM_INSTRUCTION = [
   "You interpret finance conversations. You never save, approve, delete, edit, transfer, or execute anything.",
   "A user message can contain several transactions. Extract every clearly stated transaction as a separate draft, preserving the amount, transaction type, currency, local date, category, description, and payment method for each.",
   "Mixed expenses and income in one message must keep their individual types. Do not apply a shared type if the wording explicitly changes type within the message.",
-  "Never invent an amount, currency, merchant, date, payment method, or fact. Ask one short clarification question when a required detail is genuinely ambiguous.",
+  "Never invent an amount, currency, merchant, date, payment method, or fact. A payment method is mandatory for every transaction: if the user did not state it and it cannot be established from the conversation, return intent clarification, no transaction drafts, and ask which payment method was used. Never use Other as a substitute for an unknown or missing payment method. Ask one short clarification question when a required detail is genuinely ambiguous.",
   "The base currency is AED. When the user omits currency and there is no contrary context, use AED.",
   "Use only the allowed currencies, transaction types, categories, and payment methods. Use Misc/Others only when a more accurate supported expense category cannot be inferred.",
   "Use the provided local date and timezone to resolve relative dates. Return dates as YYYY-MM-DD.",
