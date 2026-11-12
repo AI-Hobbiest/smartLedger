@@ -7,5 +7,5 @@
 @media(max-width:460px){.batch-saved-row{display:grid;gap:3px}.batch-saved-row span{text-align:left}}
 
 .turnstile-holder{grid-column:1/-1;min-height:0;display:flex;justify-content:flex-end;align-items:center;overflow:visible}.turnstile-holder:empty{display:none}
-.turnstile-holder:not(:empty){min-height:70px;padding-top:8px;justify-content:flex-start;align-items:center}
+
 
