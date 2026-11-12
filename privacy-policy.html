@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#243b53">
+  <meta name="description" content="Smart Ledger privacy notice for the prototype and its use of Cloudflare Turnstile and Groq AI.">
+  <title>Smart Ledger | Privacy Notice</title>
+  <style>
+    :root{color-scheme:light;--ink:#243b53;--muted:#63788b;--line:#dce5ec;--teal:#237b75}
+    *{box-sizing:border-box}body{margin:0;background:#f4f7f9;color:var(--ink);font:15px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{width:min(820px,calc(100% - 32px));margin:38px auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:clamp(22px,5vw,48px);box-shadow:0 12px 35px rgba(29,54,76,.06)}
+    a{color:var(--teal);overflow-wrap:anywhere}h1{font-size:clamp(28px,5vw,38px);line-height:1.15;margin:8px 0}h2{font-size:19px;margin:28px 0 8px}p,li{color:#40566a}small,.meta{color:var(--muted)}.brand{font-weight:800;letter-spacing:.08em;color:var(--teal);font-size:11px}.notice{padding:14px 16px;border-left:3px solid var(--teal);background:#f2f8f7;border-radius:8px;margin:22px 0}
+    footer{margin-top:35px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+<main>
+  <a class="brand" href="./index.html">GANATHE FINANCE · SMART LEDGER</a>
+  <h1>Privacy Notice</h1>
+  <p class="meta">Prototype notice · Last updated 13 November 2026</p>
+  <div class="notice"><strong>Prototype boundary:</strong> Smart Ledger is currently a browser-based test application. Entries are stored in this browser only and are not synced to OneDrive or a cloud ledger.</div>
+
+  <h2>1. Information stored in this browser</h2>
+  <p>Transactions created in the Conversation Test and Entry Test prototypes are stored in your browser's local storage on this device. The current prototype does not upload saved transaction rows, account balances or locally calculated report totals to the Smart Ledger AI service. Clearing browser site data may remove these local test entries. Do not use this prototype as the sole record of real financial activity.</p>
+
+  <h2>2. Smart Ledger AI and Groq</h2>
+  <p>When you use AI-powered conversation features, the application sends the message you submit and a limited history of recent user messages to the Smart Ledger backend hosted on Cloudflare. The backend forwards the information needed for language interpretation to Groq. A small structured report context (such as the requested date range and filters) may also be sent. Saved ledger rows, balances and locally calculated report totals are not included in that AI request.</p>
+  <p>Groq processes these prompts to return a structured interpretation. Its handling, retention and use of submitted information are governed by <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer">Groq's Privacy Policy</a> and applicable service terms. Do not submit sensitive financial, payment-card or identity information in this prototype.</p>
+
+  <h2>3. Cloudflare Turnstile security checks</h2>
+  <p>Smart Ledger uses Cloudflare Turnstile to help distinguish people from automated or malicious requests and protect the AI endpoint. Turnstile runs in the browser when an AI message is submitted. With Invisible mode enabled, the verification runs without displaying a widget during normal use.</p>
+  <p>According to Cloudflare, Turnstile processes technical signals that can include the visitor's IP address, TLS fingerprint, User-Agent header, sitekey and associated origin. Cloudflare describes its purpose as bot detection and protection of the website. Cloudflare's processing and privacy practices are explained in its <a href="https://www.cloudflare.com/en-gb/turnstile-privacy-policy/" target="_blank" rel="noopener noreferrer">Turnstile Privacy Addendum</a>, which forms part of the privacy information for this feature.</p>
+
+  <h2>4. Data sharing and security</h2>
+  <p>Smart Ledger does not sell your personal information. Information is shared with Cloudflare for request security and with Groq when you submit an AI interpretation request, as described above. The AI endpoint uses server-side Turnstile token validation and request protections. No security measure can guarantee absolute protection.</p>
+
+  <h2>5. Your choices</h2>
+  <p>You can use the manual Entry Test without submitting prompts to the AI provider. You can stop using the AI conversation at any time. You can remove locally stored prototype entries by using the application's clear-data controls where available, or by clearing this site's browser storage. Removing browser data does not remove information already processed by Cloudflare or Groq; consult their respective privacy notices for those services.</p>
+
+  <h2>6. Changes to this notice</h2>
+  <p>This notice describes the current prototype. It must be reviewed and updated before Smart Ledger is expanded to cloud accounts, family sharing, OneDrive integration or production financial records.</p>
+
+  <footer>Smart Ledger · Privacy notice for the current prototype · <a href="./conversation-test.html">Conversation Test</a> · <a href="./entry-test.html">Entry Test</a></footer>
+</main>
+</body>
+</html>
