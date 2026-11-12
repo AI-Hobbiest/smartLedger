@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#243b53">
+  <meta name="description" content="Privacy notice for the Smart Ledger prototype.">
+  <title>Privacy Notice | Smart Ledger</title>
+  <style>
+    :root{color-scheme:light;--ink:#243b53;--muted:#65788b;--line:#e1e8ee;--teal:#237b75;--paper:#f5f8fa}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{width:min(860px,calc(100% - 32px));margin:40px auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:clamp(22px,5vw,48px);box-shadow:0 12px 35px rgba(28,49,68,.06)}
+    a{color:var(--teal);text-underline-offset:3px}h1{font-size:clamp(28px,5vw,38px);line-height:1.15;margin:8px 0 10px}h2{font-size:18px;margin:28px 0 7px}p,li{color:#465d72}small,.eyebrow{color:var(--muted)}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em}.updated{font-size:12px;color:var(--muted)}.notice{margin:22px 0;padding:14px 16px;border:1px solid #d8e8e5;background:#f2f8f7;border-radius:10px}.notice p{margin:0}.back{display:inline-block;margin-top:28px;font-weight:700}
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">GANATHE FINANCE · SMART LEDGER</p>
+    <h1>Privacy Notice</h1>
+    <p class="updated">Prototype notice · Updated 13 November 2026</p>
+    <div class="notice"><p><strong>Prototype scope.</strong> This notice applies to the Smart Ledger Conversation Test and Entry Test pages. They are test pages, not a production banking or financial-record service. Do not enter passwords, card numbers, bank-account credentials or other highly sensitive information.</p></div>
+
+    <h2>1. Data kept in your browser</h2>
+    <p>Transactions created in the test ledger are stored in this browser's local storage on this device and browser profile. They are not currently synchronised to OneDrive or a cloud database. They remain there until you clear the test data or remove the site's browser storage.</p>
+
+    <h2>2. Messages sent for AI interpretation</h2>
+    <p>When the AI conversation feature is enabled and you send a message, the current message and up to six recent user-authored messages are sent to the Smart Ledger Cloudflare Worker and forwarded to Groq for language interpretation. Limited conversation context, such as the active report period and filters, may also be sent.</p>
+    <p>Saved ledger rows, balances and locally calculated report totals are not included in the AI request. The AI service interprets messages; it does not directly save, approve or change ledger records. Transaction drafts are reviewed in the browser and are saved to the local test ledger only after you confirm them.</p>
+
+    <h2>3. Cloudflare Turnstile and security checks</h2>
+    <p>Smart Ledger uses Cloudflare Turnstile to help protect the AI endpoint against automated abuse. Turnstile runs as an invisible/background check when you submit a conversation message. A verification token is sent to the Worker and validated with Cloudflare before the AI request is processed. The Worker also uses the request IP address for rate limiting and includes it in the server-side Turnstile verification request.</p>
+    <p>Cloudflare's processing of information for Turnstile is described in its <a href="https://www.cloudflare.com/en-gb/turnstile-privacy-policy/" target="_blank" rel="noopener noreferrer">Turnstile Privacy Addendum</a>. This reference is included as a condition of using Invisible mode.</p>
+
+    <h2>4. Third-party services</h2>
+    <p>The AI interpretation path uses Cloudflare Workers and Cloudflare Turnstile, together with Groq as the model provider. Those providers process data as needed to deliver and secure their services, subject to their applicable terms and privacy notices. The prototype does not include a cloud database or OneDrive synchronisation.</p>
+
+    <h2>5. Your choices</h2>
+    <p>Do not use the AI conversation page for information you do not want sent to the AI provider. You can use the manual Entry Test page instead; it stores test entries locally in your browser and does not send them for AI interpretation. You can clear locally stored test entries using the controls on the test pages, or clear the site's storage in your browser settings.</p>
+
+    <h2>6. Changes and limitations</h2>
+    <p>This notice describes the current prototype implementation and may need to be expanded before the service is used for real family financial records or made available to other users. In particular, a production release should identify the responsible service operator and provide a contact channel for privacy questions.</p>
+
+    <a class="back" href="./conversation-test.html">← Back to Smart Ledger Conversation Test</a>
+  </main>
+</body>
+</html>
