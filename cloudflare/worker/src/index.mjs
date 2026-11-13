@@ -249,12 +249,73 @@ async function callGroq(input, env, local) {
     })
   });
 
-  if (response.status === 429) {
-    return { status: 429, body: { error: "The free AI service has reached its current rate limit. Please try again later; Smart Ledger will not switch to a paid service." } };
-  }
   if (!response.ok) {
-    // Do not return upstream error bodies; they can contain request details.
-    return { status: 502, body: { error: "The free AI service is temporarily unavailable. Your message was not saved." } };
+    // Keep provider diagnostics useful without exposing request contents or credentials.
+    let providerError = null;
+    try {
+      const errorPayload = await response.json();
+      providerError = errorPayload && errorPayload.error && typeof errorPayload.error === "object"
+        ? errorPayload.error : null;
+    } catch { /* Ignore non-JSON provider error bodies. */ }
+
+    const requestId = response.headers.get("x-request-id")
+      || response.headers.get("request-id")
+      || crypto.randomUUID();
+    const providerMessage = typeof (providerError && providerError.message) === "string"
+      ? providerError.message.slice(0, 280) : "No provider message returned.";
+    const providerType = typeof (providerError && providerError.type) === "string"
+      ? providerError.type.slice(0, 80) : "unknown";
+    const providerCode = typeof (providerError && providerError.code) === "string"
+      ? providerError.code.slice(0, 80) : "unknown";
+
+    console.error("Smart Ledger Groq request failed", {
+      requestId,
+      status: response.status,
+      type: providerType,
+      code: providerCode,
+      message: providerMessage
+    });
+
+    if (response.status === 429) {
+      return { status: 429, body: {
+        error: "The free AI service has reached its current rate limit. Please try again later; Smart Ledger will not switch to a paid service.",
+        diagnosticCode: "GROQ_RATE_LIMIT",
+        requestId
+      } };
+    }
+    if (response.status === 401 || response.status === 403) {
+      return { status: 502, body: {
+        error: "Groq rejected the Worker credentials or model permission. Check the GROQ_API_KEY secret and model access in Cloudflare.",
+        diagnosticCode: "GROQ_AUTH",
+        requestId
+      } };
+    }
+    if (response.status === 404) {
+      return { status: 502, body: {
+        error: "Groq could not find the configured model or API route. Check the model ID and Groq API endpoint.",
+        diagnosticCode: "GROQ_MODEL_OR_ROUTE",
+        requestId
+      } };
+    }
+    if (response.status === 400 || response.status === 422) {
+      return { status: 502, body: {
+        error: "Groq rejected the AI request format or JSON schema. The Worker logs contain a redacted diagnostic.",
+        diagnosticCode: "GROQ_REQUEST_SCHEMA",
+        requestId
+      } };
+    }
+    if (response.status === 498) {
+      return { status: 503, body: {
+        error: "Groq's free-tier capacity is currently unavailable. Please try again later.",
+        diagnosticCode: "GROQ_CAPACITY",
+        requestId
+      } };
+    }
+    return { status: 502, body: {
+      error: "The free AI provider returned an upstream error (HTTP " + response.status + "). Please try again later.",
+      diagnosticCode: "GROQ_UPSTREAM",
+      requestId
+    } };
   }
 
   const payload = await response.json();
