@@ -183,7 +183,11 @@
         let payload;
         try { payload = await response.json(); }
         catch { throw new Error("The free AI bridge returned an unreadable response."); }
-        if (!response.ok) throw new Error(payload.error || "The free AI bridge could not process the message.");
+        if (!response.ok) {
+          const details = [payload.diagnosticCode, payload.requestId].filter(Boolean).join(" · ");
+          throw new Error((payload.error || "The free AI bridge could not process the message.")
+            + (details ? " [" + details + "]" : ""));
+        }
         setStatus("Free AI bridge connected", "Background security verification and the AI request both succeeded.");
         return payload;
       } finally {
