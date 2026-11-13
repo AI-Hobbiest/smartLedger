@@ -407,8 +407,18 @@ export default {
     try {
       const result = await callGroq(input, env, local);
       return jsonResponse(result.body, result.status, allowedOrigin);
-    } catch {
-      return jsonResponse({ error: "The free AI service could not be reached. Your message was not saved." }, 502, allowedOrigin);
+    } catch (error) {
+      const requestId = crypto.randomUUID();
+      console.error("Smart Ledger Groq worker exception", {
+        requestId,
+        name: error && typeof error.name === "string" ? error.name.slice(0, 80) : "Error",
+        message: error && typeof error.message === "string" ? error.message.slice(0, 240) : "No exception message."
+      });
+      return jsonResponse({
+        error: "The Worker could not complete the AI request. Please share the diagnostic code with support.",
+        diagnosticCode: "GROQ_WORKER_EXCEPTION",
+        requestId
+      }, 502, allowedOrigin);
     }
   }
 };
