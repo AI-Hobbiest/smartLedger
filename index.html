@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#243b53">
-  <meta name="description" content="Ganathe Finance — a simple family money manager.">
+  <meta name="theme-color" content="#20364b">
+  <meta name="description" content="Ganathe Finance — a conversational personal finance workspace.">
   <link rel="manifest" href="./manifest.json">
   <link rel="stylesheet" href="./assets/css/app.css">
   <title>Ganathe Finance | Smart Ledger</title>
@@ -17,63 +17,51 @@
         <span><span class="eyebrow">GANATHE FINANCE</span><strong>Smart Ledger</strong></span>
       </a>
       <div class="header-actions">
-        <span id="syncStatus" class="sync-pill" data-state="local"><span class="sync-dot"></span><span id="syncText">Local preview · not synced</span></span>
-        <button class="button button-outline button-small" id="connectButton" type="button">Connect OneDrive</button>
+        <span id="syncStatus" class="sync-pill" data-state="local"><span class="sync-dot"></span><span id="syncText">Development data · this browser</span></span>
+        <button class="button button-outline button-small" id="exportBackupButton" type="button">Export backup</button>
+        <button class="button button-outline button-small" id="importBackupButton" type="button">Import backup</button>
+        <input id="importBackupInput" type="file" accept=".json,application/json" hidden>
       </div>
     </header>
 
     <main>
+      <section class="development-banner" role="note">
+        <strong>Development workspace</strong>
+        <span>Use synthetic/test entries only. Data is stored in this browser on this device. Do not enter real financial records yet.</span>
+      </section>
+
       <section class="welcome-row">
         <div>
-          <p class="eyebrow">YOUR FAMILY FINANCES</p>
+          <p class="eyebrow">YOUR PERSONAL FINANCES</p>
           <h1>Money, made <span>clear.</span></h1>
-          <p class="welcome-copy">Record a transaction, ask a question or jump straight into a report.</p>
+          <p class="welcome-copy">Record a transaction, ask a question or explore a report.</p>
         </div>
         <div class="date-chip" id="todayLabel"></div>
       </section>
 
       <section class="stats-grid" aria-label="Financial overview">
-        <article class="stat-card">
-          <div class="stat-top"><span>Expenses this month</span><span class="stat-icon">↘</span></div>
-          <strong id="monthSpend">AED 0.00</strong>
-          <small id="monthSpendHint">No transactions yet</small>
-        </article>
-        <article class="stat-card">
-          <div class="stat-top"><span>Income this month</span><span class="stat-icon">↗</span></div>
-          <strong id="monthIncome">AED 0.00</strong>
-          <small>Recorded income</small>
-        </article>
-        <article class="stat-card">
-          <div class="stat-top"><span>Active trips</span><span class="stat-icon">✈</span></div>
-          <strong id="activeTrips">0</strong>
-          <small>Trips in progress</small>
-        </article>
+        <article class="stat-card"><div class="stat-top"><span>Expenses this month</span><span class="stat-icon">↘</span></div><strong id="monthSpend">AED 0.00</strong><small id="monthSpendHint">No expenses yet</small></article>
+        <article class="stat-card"><div class="stat-top"><span>Income this month</span><span class="stat-icon">↗</span></div><strong id="monthIncome">AED 0.00</strong><small id="monthIncomeHint">No income yet</small></article>
+        <article class="stat-card"><div class="stat-top"><span>Monthly balance</span><span class="stat-icon">＝</span></div><strong id="monthBalance">AED 0.00</strong><small>Income less expenses, by currency</small></article>
+        <article class="stat-card"><div class="stat-top"><span>Active trips</span><span class="stat-icon">✈</span></div><strong id="activeTrips">0</strong><small>Current and planned trips</small></article>
       </section>
 
       <section class="workspace-grid">
         <div class="main-column">
           <section class="panel conversation-panel">
-            <div class="panel-heading">
-              <div><p class="eyebrow">SMART ASSISTANT</p><h2>What would you like to do?</h2></div>
-              <span class="engine-label">Built-in commands</span>
-            </div>
+            <div class="panel-heading"><div><p class="eyebrow">SMART ASSISTANT</p><h2>What would you like to do?</h2></div><span class="engine-label">Built-in command engine</span></div>
             <div class="chat-stream" id="chatStream" aria-live="polite">
-              <div class="chat-message assistant">
-                <span class="avatar">GL</span>
-                <div class="message-body"><p>Hello! Try something like:</p><p class="example-phrase">“Spent AED 48 at Carrefour for groceries”</p><p>Or use one of the shortcuts below. You can always use the forms if I don't understand.</p></div>
-              </div>
+              <div class="chat-message assistant"><span class="avatar">GL</span><div class="message-body"><p>Hello! Describe an expense or income in plain language.</p><p class="example-phrase">“Spent AED 48 at Carrefour for groceries using my credit card”</p><p>I'll prepare a draft for review. You can also use the forms below.</p></div></div>
             </div>
             <div class="suggestion-row">
               <button class="suggestion" data-prompt="Show my spending this month" type="button">This month</button>
-              <button class="suggestion" data-prompt="Show today's expenses" type="button">Today’s expenses</button>
+              <button class="suggestion" data-prompt="Show today's expenses" type="button">Today</button>
+              <button class="suggestion" data-prompt="Show this week's spending" type="button">This week</button>
               <button class="suggestion" data-prompt="Show trip expenses" type="button">Trip summary</button>
+              <button class="suggestion" data-prompt="Add an expense" type="button">Add expense</button>
             </div>
-            <form id="chatForm" class="chat-entry">
-              <label class="sr-only" for="chatInput">Type a message</label>
-              <input id="chatInput" autocomplete="off" placeholder="Tell me what you spent, or ask a question…" maxlength="500">
-              <button class="send-button" aria-label="Send message" type="submit">➤</button>
-            </form>
-            <p class="micro-note">Entries are always shown for review before saving. AI is not required for core actions.</p>
+            <form id="chatForm" class="chat-entry"><label class="sr-only" for="chatInput">Type a message</label><input id="chatInput" autocomplete="off" placeholder="Tell me what you spent, received or want to know…" maxlength="500"><button class="send-button" aria-label="Send message" type="submit">➤</button></form>
+            <p class="micro-note">The built-in parser works without a hosted AI service. Review every transaction before saving.</p>
           </section>
 
           <section class="panel">
@@ -81,45 +69,50 @@
             <div class="quick-actions">
               <button class="quick-action" data-action="expense" type="button"><span class="quick-icon teal">＋</span><span><strong>Add expense</strong><small>Record a payment</small></span></button>
               <button class="quick-action" data-action="income" type="button"><span class="quick-icon blue">↗</span><span><strong>Add income</strong><small>Record money received</small></span></button>
-              <button class="quick-action" data-action="trip" type="button"><span class="quick-icon amber">✈</span><span><strong>Create a trip</strong><small>Track shared spending</small></span></button>
-              <button class="quick-action" data-action="reports" type="button"><span class="quick-icon violet">▥</span><span><strong>View reports</strong><small>Explore your spending</small></span></button>
+              <button class="quick-action" data-action="trip" type="button"><span class="quick-icon amber">✈</span><span><strong>Create a trip</strong><small>Track trip spending</small></span></button>
+              <button class="quick-action" data-action="budget" type="button"><span class="quick-icon violet">▤</span><span><strong>Set a budget</strong><small>Track a monthly limit</small></span></button>
             </div>
           </section>
 
           <section class="panel" id="reportsPanel">
-            <div class="panel-heading"><div><p class="eyebrow">YOUR NUMBERS</p><h2>Reports</h2></div></div>
+            <div class="panel-heading"><div><p class="eyebrow">YOUR NUMBERS</p><h2>Reports</h2></div><button class="text-button" id="exportCsvButton" type="button">Export transactions CSV ↓</button></div>
             <div class="report-actions">
               <button class="report-button" data-report="today" type="button"><strong>Today</strong><small>Daily activity</small></button>
               <button class="report-button" data-report="week" type="button"><strong>This week</strong><small>Weekly spending</small></button>
               <button class="report-button" data-report="month" type="button"><strong>This month</strong><small>Monthly overview</small></button>
-              <button class="report-button" data-report="trip" type="button"><strong>Trip report</strong><small>Shared expenses</small></button>
+              <button class="report-button" data-report="quarter" type="button"><strong>This quarter</strong><small>Quarterly view</small></button>
+              <button class="report-button" data-report="year" type="button"><strong>This year</strong><small>Annual view</small></button>
+              <button class="report-button" data-report="trip" type="button"><strong>Trip report</strong><small>Trip-linked costs</small></button>
             </div>
-            <div id="reportResult" class="report-result" hidden></div>
+            <div class="custom-report"><label>From <input id="reportFrom" type="date"></label><label>To <input id="reportTo" type="date"></label><button id="customReportButton" class="button button-outline button-small" type="button">Run custom report</button></div>
+            <div id="reportResult" class="report-result" hidden aria-live="polite"></div>
           </section>
         </div>
 
         <aside class="side-column">
           <section class="panel">
-            <div class="panel-heading"><div><p class="eyebrow">LATEST ACTIVITY</p><h2>Transactions</h2></div><button class="text-button" id="addExpenseLink" type="button">＋ Add</button></div>
-            <div id="transactionList" class="transaction-list"><div class="empty-state">No transactions yet. Add your first expense to get started.</div></div>
+            <div class="panel-heading"><div><p class="eyebrow">LEDGER MANAGEMENT</p><h2>Transactions</h2></div><button class="text-button" id="addExpenseLink" type="button">＋ Add</button></div>
+            <div class="filter-grid">
+              <input id="transactionSearch" type="search" placeholder="Search description or notes…" aria-label="Search transactions">
+              <select id="transactionTypeFilter" aria-label="Filter by transaction type"><option value="">All types</option><option>Expense</option><option>Income</option></select>
+              <select id="transactionCategoryFilter" aria-label="Filter by category"><option value="">All categories</option></select>
+              <select id="transactionTripFilter" aria-label="Filter by trip"><option value="">All activity</option><option value="__personal">Personal only</option></select>
+            </div>
+            <div id="transactionList" class="transaction-list"><div class="empty-state">No transactions yet. Add your first test entry.</div></div>
+            <p class="list-footnote" id="transactionCount">0 transactions</p>
           </section>
-          <section class="panel">
-            <div class="panel-heading"><div><p class="eyebrow">ON THE GO</p><h2>Your trips</h2></div><button class="text-button" id="addTripLink" type="button">＋ New</button></div>
-            <div id="tripList" class="trip-list"><div class="empty-state">Your trips will appear here.</div></div>
-          </section>
-          <section class="connection-card">
-            <div class="connection-icon">☁</div>
-            <div><strong>Your data, your OneDrive</strong><p>Connect your Microsoft account to use one shared Excel workbook.</p></div>
-            <button id="connectCardButton" class="button button-dark button-small" type="button">Connect</button>
-          </section>
+
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">MONTHLY LIMITS</p><h2>Budgets</h2></div><button class="text-button" id="addBudgetLink" type="button">＋ Set</button></div><div id="budgetList" class="budget-list"><div class="empty-state">No budgets set yet.</div></div></section>
+
+          <section class="panel"><div class="panel-heading"><div><p class="eyebrow">ON THE GO</p><h2>Trips</h2></div><button class="text-button" id="addTripLink" type="button">＋ New</button></div><div id="tripList" class="trip-list"><div class="empty-state">Your trips will appear here.</div></div></section>
         </aside>
       </section>
     </main>
-    <footer>Ganathe Finance · Smart Ledger <span>·</span> <a href="./privacy-policy.html">Privacy</a></footer>
+    <footer>Ganathe Finance · Smart Ledger <span>·</span> Development build <span>·</span> <a href="./privacy-policy.html">Privacy</a></footer>
   </div>
 
   <dialog id="transactionDialog" class="app-dialog">
-    <form id="transactionForm" method="dialog">
+    <form id="transactionForm"><input id="txId" type="hidden">
       <div class="dialog-heading"><div><p class="eyebrow">TRANSACTION</p><h2 id="transactionDialogTitle">Add expense</h2></div><button class="icon-button" type="button" data-close="transactionDialog" aria-label="Close">×</button></div>
       <div class="form-grid">
         <label>Type<select id="txType" name="type"><option>Expense</option><option>Income</option></select></label>
@@ -131,31 +124,42 @@
         <label>Payment type<select id="txPayment" name="paymentType"><option>Cash</option><option>Debit Card</option><option>Credit Card</option><option>Bank Transfer</option><option>Digital Wallet</option><option>Other</option></select></label>
         <label>Paid by<input id="txPaidBy" name="paidBy" value="Me" maxlength="60" required></label>
         <label>Trip (optional)<select id="txTrip" name="tripId"><option value="">Personal / non-trip</option></select></label>
-        <label class="span-2">Notes<input id="txNotes" name="notes" maxlength="200" placeholder="Optional"></label>
+        <label class="span-2">Notes<input id="txNotes" name="notes" maxlength="300" placeholder="Optional"></label>
       </div>
       <div class="dialog-actions"><button class="button button-outline" type="button" data-close="transactionDialog">Cancel</button><button class="button button-primary" type="submit">Save transaction</button></div>
     </form>
   </dialog>
 
   <dialog id="tripDialog" class="app-dialog">
-    <form id="tripForm" method="dialog">
-      <div class="dialog-heading"><div><p class="eyebrow">TRIP PLANNER</p><h2>Create a trip</h2></div><button class="icon-button" type="button" data-close="tripDialog" aria-label="Close">×</button></div>
+    <form id="tripForm"><input id="tripId" type="hidden">
+      <div class="dialog-heading"><div><p class="eyebrow">TRIP PLANNER</p><h2 id="tripDialogTitle">Create a trip</h2></div><button class="icon-button" type="button" data-close="tripDialog" aria-label="Close">×</button></div>
       <div class="form-grid">
-        <label class="span-2">Trip name<input id="tripName" name="name" required maxlength="100" placeholder="e.g. Oman family trip"></label>
+        <label class="span-2">Trip name<input id="tripName" name="name" required maxlength="100" placeholder="e.g. Oman trip"></label>
         <label class="span-2">Destination<input id="tripDestination" name="destination" maxlength="100" placeholder="e.g. Muscat and Chennai"></label>
         <label>Start date<input id="tripStart" name="startDate" type="date"></label>
         <label>End date<input id="tripEnd" name="endDate" type="date"></label>
         <label class="span-2">Participants<input id="tripMembers" name="members" placeholder="Names separated by commas"></label>
+        <label>Status<select id="tripStatus"><option>Planned</option><option>Active</option><option>Completed</option><option>Cancelled</option></select></label>
       </div>
-      <div class="dialog-actions"><button class="button button-outline" type="button" data-close="tripDialog">Cancel</button><button class="button button-primary" type="submit">Create trip</button></div>
+      <div class="dialog-actions"><button class="button button-outline" type="button" data-close="tripDialog">Cancel</button><button class="button button-primary" type="submit">Save trip</button></div>
     </form>
   </dialog>
 
-  <script defer src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
-  <script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script defer src="./assets/js/config.js"></script>
+  <dialog id="budgetDialog" class="app-dialog">
+    <form id="budgetForm"><input id="budgetId" type="hidden">
+      <div class="dialog-heading"><div><p class="eyebrow">MONTHLY PLANNING</p><h2 id="budgetDialogTitle">Set a budget</h2></div><button class="icon-button" type="button" data-close="budgetDialog" aria-label="Close">×</button></div>
+      <div class="form-grid">
+        <label class="span-2">Category<select id="budgetCategory" required></select></label>
+        <label>Monthly limit<input id="budgetAmount" type="number" min="0.01" step="0.01" required placeholder="0.00"></label>
+        <label>Currency<select id="budgetCurrency"><option>AED</option><option>INR</option><option>OMR</option><option>USD</option><option>SGD</option><option>EUR</option><option>GBP</option></select></label>
+      </div>
+      <p class="form-help">Usage is calculated for the current calendar month, matching category and currency.</p>
+      <div class="dialog-actions"><button class="button button-outline" type="button" data-close="budgetDialog">Cancel</button><button class="button button-primary" type="submit">Save budget</button></div>
+    </form>
+  </dialog>
+
   <script defer src="./assets/js/ledger-core.js"></script>
-  <script defer src="./assets/js/onedrive-repository.js"></script>
+  <script defer src="./assets/js/ledger-repository.js"></script>
   <script defer src="./assets/js/app.js"></script>
 </body>
 </html>
