@@ -4,9 +4,6 @@ window.SMART_LEDGER_CONFIG = Object.freeze({
   authority: "https://login.microsoftonline.com/consumers",
   redirectUri: window.location.origin + window.location.pathname,
   workbookName: "GanatheFinance.xlsx",
-  /* Optional shared-workbook binding. Fill these after the owner shares one workbook with family members. */
-  workbookDriveId: "9E53F849ACDD21A5",
-  workbookItemId: "9E53F849ACDD21A5!sdf893176f88043cf8ed8f568f9f6a343",
   graphBase: "https://graph.microsoft.com/v1.0",
-  scopes: ["User.Read", "Files.ReadWrite"]
+  scopes: ["Files.ReadWrite"]
 });
