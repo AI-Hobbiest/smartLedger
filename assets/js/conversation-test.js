@@ -125,7 +125,7 @@
   };
   const renderReview = draft => {
     pending=draft;context.setPending(draft);
-    let paymentChosen=draft.payment!=="Other";
+    let paymentChosen=payments.includes(draft.payment)&&draft.payment!=="Other";
     const wrapper=document.createElement("div");wrapper.className="message assistant";
     const card=document.createElement("div");card.className="review-card compact-review";
     const options=(arr,selected)=>arr.map(v=>'<option '+(v===selected?'selected':'')+' value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join("");
@@ -244,7 +244,7 @@
       '<label class="wide">Description<input id="b-description-'+index+'" maxlength="120" value="'+escapeHtml(draft.description)+'"></label>'+
       '<label class="wide">Notes<input id="b-notes-'+index+'" maxlength="500" value="" placeholder="Optional notes"></label>'+
       '</div><div class="base-preview" id="b-preview-'+index+'"></div></section>').join("");
-    const summaryRows=drafts.map((draft,index)=>'<div class="compact-batch-row"><div><b>'+(index+1)+'. '+escapeHtml(draft.description||"Transaction")+'</b><small>'+escapeHtml(draft.type+' · '+draft.category+' · '+dateLabel(draft.date))+'</small><small class="'+(draft.payment==="Other"?"payment-needed":"")+'">'+escapeHtml(draft.payment==="Other"?"Payment method required":draft.payment)+'</small></div><strong>'+escapeHtml(currencyLabel(draft.currency,draft.amount))+'</strong></div>').join("");
+    const summaryRows=drafts.map((draft,index)=>'<div class="compact-batch-row"><div><b>'+(index+1)+'. '+escapeHtml(draft.description||"Transaction")+'</b><small>'+escapeHtml(draft.type+' · '+draft.category+' · '+dateLabel(draft.date))+'</small><small class="'+(draft.payment==="Other"?"payment-needed":"")+'">'+escapeHtml(draft.payment&&draft.payment!=="Other"?draft.payment:"Payment method required")+'</small></div><strong>'+escapeHtml(currencyLabel(draft.currency,draft.amount))+'</strong></div>').join("");
     card.innerHTML='<div class="review-head"><b>Review '+drafts.length+' entries</b><span>DRAFT · NOT SAVED</span></div>'+
       '<div class="compact-batch-summary">'+summaryRows+'</div>'+
       '<div class="review-actions compact-review-actions"><button class="confirm-btn" id="confirm-batch" type="button">Confirm all</button><button class="edit-cancel" id="edit-batch-entries" type="button">Edit entries</button><button class="edit-cancel" id="cancel-batch" type="button">Cancel</button></div>'+
