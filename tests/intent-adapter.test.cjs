@@ -149,3 +149,31 @@ test("Add an expense starts a missing-detail conversation instead of requiring a
   assert.equal(result.pendingTransaction.type,"Expense");
   assert.match(result.question,/how much/i);
 });
+
+
+test("a clear expense still produces a review draft when the free AI provider is unavailable", async () => {
+  const provider = {interpret:async()=>{throw new Error("The free AI service is temporarily unavailable.");}};
+  const result = await adapterApi.create({provider}).interpret("Just bought food for 57.75 AED");
+  assert.equal(result.intent,"transaction.create");
+  assert.equal(result.source,"local-fallback");
+  assert.equal(result.transactions.length,1);
+  assert.equal(result.transactions[0].type,"Expense");
+  assert.equal(result.transactions[0].amount,57.75);
+  assert.equal(result.transactions[0].currency,"AED");
+  assert.equal(result.transactions[0].category,"Food/EatOut");
+  assert.equal(result.transactions[0].description,"Food");
+});
+
+test("provider failure does not invent a transaction for a message without a clear type", async () => {
+  const provider = {interpret:async()=>{throw new Error("AI unavailable");}};
+  const result = await adapterApi.create({provider}).interpret("57.75 AED");
+  assert.equal(result.intent,"provider.error");
+});
+
+test("a clear multi-transaction message falls back locally when the provider fails", async () => {
+  const provider = {interpret:async()=>{throw new Error("AI unavailable");}};
+  const result = await adapterApi.create({provider}).interpret("I spent 20 AED on lunch and received 500 AED salary");
+  assert.equal(result.intent,"transaction.create");
+  assert.deepEqual(Array.from(result.transactions,x=>x.type),["Expense","Income"]);
+  assert.deepEqual(Array.from(result.transactions,x=>x.amount),[20,500]);
+});
