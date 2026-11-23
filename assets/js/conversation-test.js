@@ -125,6 +125,7 @@
   };
   const renderReview = draft => {
     pending=draft;context.setPending(draft);
+    let paymentChosen=draft.payment!=="Other";
     const wrapper=document.createElement("div");wrapper.className="message assistant";
     const card=document.createElement("div");card.className="review-card compact-review";
     const options=(arr,selected)=>arr.map(v=>'<option '+(v===selected?'selected':'')+' value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join("");
@@ -133,8 +134,8 @@
       '<div class="compact-review-summary">'+
         '<div class="compact-review-top"><span class="review-kind" id="review-type-label">'+escapeHtml(draft.type.toUpperCase())+'</span><strong id="review-amount-label">'+escapeHtml(currencyLabel(draft.currency,draft.amount))+'</strong></div>'+
         '<div class="review-description" id="review-description-label">'+escapeHtml(draft.description||"Transaction")+'</div>'+
-        '<div class="review-meta"><span id="review-date-label">'+escapeHtml(dateLabel(draft.date))+'</span><span id="review-category-label">'+escapeHtml(draft.category||"Uncategorised")+'</span>'+(draft.payment==="Other"?"":'<span id="review-payment-label">'+escapeHtml(paymentLabel(draft.payment))+'</span>')+'</div>'+
-        (draft.payment==="Other"?'<div class="compact-payment-field" id="compact-payment-field"><label for="quick-payment">Payment method <small>Not mentioned · optional</small></label><select id="quick-payment"><option value="" selected>Choose payment method</option>'+payments.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v==="Other"?"Other / Not sure":v)+'</option>').join("")+'</select></div>':"")+
+        '<div class="review-meta"><span id="review-date-label">'+escapeHtml(dateLabel(draft.date))+'</span><span id="review-category-label">'+escapeHtml(draft.category||"Uncategorised")+'</span><span id="review-payment-label"'+(paymentChosen?"":' hidden')+'>'+escapeHtml(paymentLabel(draft.payment))+'</span></div>'+
+        (!paymentChosen?'<div class="compact-payment-field" id="compact-payment-field"><label for="quick-payment">Payment method <small>Required · choose before saving</small></label><select id="quick-payment" required aria-required="true"><option value="" selected>Choose payment method</option>'+payments.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v==="Other"?"Other / Not sure":v)+'</option>').join("")+'</select></div>':"")+
       '</div>'+
       '<div class="review-actions compact-review-actions"><button class="confirm-btn" id="confirm-entry" type="button">Confirm</button><button class="edit-cancel" id="edit-entry" type="button">Edit details</button><button class="edit-cancel" id="cancel-entry" type="button">Cancel</button></div>'+
       '<div class="review-edit-fields" id="review-edit-fields" hidden>'+
@@ -145,7 +146,7 @@
           '<label>Currency<select id="r-currency">'+options(["AED","INR","USD","OMR","SGD","EUR","GBP"],draft.currency)+'</select></label>'+
           '<label>Category<select id="r-category">'+options(categories,draft.category)+'</select></label>'+
           '<label class="wide fx-field" id="r-rate-field"'+(draft.currency==="AED"?" hidden":"")+'>FX rate to AED<input id="r-rate" type="number" min="0.000001" step="any" value="'+draft.fxRateToBase+'"></label>'+
-          '<label>Payment<select id="r-payment">'+options(payments,draft.payment)+'</select></label>'+
+          '<label>Payment<select id="r-payment" required>'+(paymentChosen?"":'<option value="" selected>Choose payment method</option>')+options(payments,paymentChosen?draft.payment:"")+'</select></label>'+
           '<label class="wide">Description<input id="r-description" maxlength="120" value="'+escapeHtml(draft.description)+'"></label>'+
           '<label class="wide">Spent by<select id="r-spent">'+options(["TEST_USER_1","TEST_USER_2","TEST_USER_3"],draft.spentBy)+'</select></label>'+
           '<label class="wide">Notes<input id="r-notes" maxlength="500" value="'+escapeHtml(draft.notes)+'" placeholder="Optional notes"></label>'+
@@ -165,17 +166,25 @@
       $("review-description-label").textContent=value.description||"Description needed";
       $("review-date-label").textContent=dateLabel(value.date);
       $("review-category-label").textContent=value.category;
-      const paymentSummary=$("review-payment-label");if(paymentSummary)paymentSummary.textContent=paymentLabel(value.payment);
+      const paymentSummary=$("review-payment-label");if(paymentSummary){paymentSummary.textContent=paymentLabel(value.payment);paymentSummary.hidden=!paymentChosen;}
+      const quickPaymentField=$("compact-payment-field");if(quickPaymentField)quickPaymentField.hidden=paymentChosen;
       $("r-rate-field").hidden=value.currency==="AED";
       $("base-preview").textContent=value.currency==="AED"?"Base amount: AED "+value.baseAmount.toFixed(2):"Estimated base amount: AED "+value.baseAmount.toFixed(2)+" · Verify the exchange rate before saving.";
       return value;
     };
     const quickPayment=$("quick-payment");
     const updateEditPreview=event=>{
-      if(event&&event.target&&event.target.id==="r-payment"&&quickPayment)quickPayment.value=event.target.value==="Other"?"":event.target.value;
+      if(event&&event.target&&event.target.id==="r-payment"){
+        paymentChosen=!!event.target.value;
+        if(quickPayment)quickPayment.value=paymentChosen?event.target.value:"";
+      }
       syncSummary();
     };
-    if(quickPayment)quickPayment.addEventListener("change",()=>{$("r-payment").value=quickPayment.value||"Other";syncSummary();});
+    if(quickPayment)quickPayment.addEventListener("change",()=>{
+      paymentChosen=!!quickPayment.value;
+      $("r-payment").value=paymentChosen?quickPayment.value:"";
+      syncSummary();
+    });
     ["r-type","r-date","r-amount","r-currency","r-category","r-payment","r-description","r-spent","r-notes","r-rate"].forEach(id=>{
       $(id).addEventListener("input",updateEditPreview);
       $(id).addEventListener("change",updateEditPreview);
@@ -188,10 +197,16 @@
       editFields.hidden=!editFields.hidden;
       card.classList.toggle("is-editing",!editFields.hidden);
       $("edit-entry").textContent=editFields.hidden?"Edit details":"Hide details";
-      if(!editFields.hidden){const quickPayment=$("quick-payment");$("r-payment").value=quickPayment&&quickPayment.value?quickPayment.value:($("r-payment").value||"Other");syncSummary();}
+      if(!editFields.hidden){const quickPayment=$("quick-payment");$("r-payment").value=quickPayment&&quickPayment.value?quickPayment.value:($("r-payment").value||"");syncSummary();}
     });
     $("confirm-entry").addEventListener("click",()=>{
       const value=readDraft();
+      if(!paymentChosen||!value.payment){
+        addMessage("One detail before I save this: which payment method did you use? Please choose cash, debit card, credit card, bank transfer, digital wallet, or Other / Not sure.");
+        if(quickPayment){quickPayment.focus();}
+        else{$("edit-entry").click();$("r-payment").focus();}
+        return;
+      }
       if(!value.amount||value.amount<=0||!value.date||!value.description||!value.fxRateToBase||value.fxRateToBase<=0){addMessage("Please check the amount, date, description and exchange rate before saving.");return;}
       const rows=readRecords(),now=new Date().toISOString();
       const rec={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),date:value.date,type:value.type,amount:value.amount,currency:value.currency,fxRateToBase:value.fxRateToBase,baseAmount:value.baseAmount,category:value.category,description:value.description,payment:value.payment,spentBy:value.spentBy,spentByLabel:value.spentByLabel,recordedBy:"TEST_USER_1",tripId:"",notes:value.notes,createdAt:now,updatedAt:now};
