@@ -2,20 +2,17 @@
 (function (root) {
   "use strict";
   const config = root.SMART_LEDGER_CONFIG || {};
-  const TX_HEADERS = ["TransactionID","Date","Type","Description","Category","Amount","Currency","PaymentType","PaidBy","TripID","SplitMode","SplitMembers","Notes","CreatedAt","UpdatedAt"];
-  const TRIP_HEADERS = ["TripID","TripName","Destination","StartDate","EndDate","Status","Members","CreatedAt"];
+  /* Keep the human-facing workbook intentionally small. No technical audit tabs. */
+  const TX_HEADERS = ["ID","Date","Type","Description","Category","Amount","Currency","Payment Method","Paid By","Trip","Shared With","Notes"];
+  const TRIP_HEADERS = ["ID","Trip","Destination","Start Date","End Date","Participants","Status"];
   const MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
   class OneDriveRepository {
     constructor() {
       if (!root.msal || !root.msal.PublicClientApplication) throw new Error("Microsoft sign-in library did not load.");
       this.client = new root.msal.PublicClientApplication({
-        auth: {
-          clientId: config.microsoftClientId,
-          authority: config.authority || "https://login.microsoftonline.com/consumers",
-          redirectUri: config.redirectUri || root.location.href,
-          navigateToLoginRequestUrl: true
-        },
+        auth: { clientId: config.microsoftClientId, authority: config.authority || "https://login.microsoftonline.com/consumers",
+          redirectUri: config.redirectUri || root.location.href, navigateToLoginRequestUrl: true },
         cache: { cacheLocation: "sessionStorage" }
       });
       this.account = null;
@@ -30,22 +27,17 @@
       const redirectResult = await this.client.handleRedirectPromise();
       if (redirectResult && redirectResult.account) this.account = redirectResult.account;
       if (!this.account) this.account = this.client.getAllAccounts()[0] || null;
-      if (!this.account) {
-        const result = await this.client.loginPopup({ scopes: config.scopes || ["User.Read", "Files.ReadWrite"] });
-        this.account = result.account;
-      }
+      if (!this.account) this.account = (await this.client.loginPopup({ scopes: config.scopes || ["User.Read", "Files.ReadWrite"] })).account;
       return this.getProfile();
     }
 
     async token() {
       if (!this.account) throw new Error("Connect your Microsoft account first.");
       const request = { account: this.account, scopes: config.scopes || ["User.Read", "Files.ReadWrite"] };
-      try {
-        return (await this.client.acquireTokenSilent(request)).accessToken;
-      } catch (error) {
-        if (error && (error.name === "InteractionRequiredAuthError" || error.errorCode === "interaction_required")) {
+      try { return (await this.client.acquireTokenSilent(request)).accessToken; }
+      catch (error) {
+        if (error && (error.name === "InteractionRequiredAuthError" || error.errorCode === "interaction_required"))
           return (await this.client.acquireTokenPopup(request)).accessToken;
-        }
         throw error;
       }
     }
@@ -53,21 +45,20 @@
     async graph(path, options) {
       const token = await this.token();
       const response = await fetch((config.graphBase || "https://graph.microsoft.com/v1.0") + path, {
-        ...(options || {}),
-        headers: { Authorization: "Bearer " + token, ...((options && options.headers) || {}) }
+        ...(options || {}), headers: { Authorization: "Bearer " + token, ...((options && options.headers) || {}) }
       });
       if (!response.ok) {
         const detail = await response.text().catch(() => "");
         const error = new Error("OneDrive request failed (" + response.status + "). " + detail.slice(0, 240));
-        error.status = response.status;
-        throw error;
+        error.status = response.status; throw error;
       }
       return response;
     }
 
     async getProfile() {
       const profile = await (await this.graph("/me?$select=displayName,mail,userPrincipalName")).json();
-      return { name: profile.displayName || profile.mail || profile.userPrincipalName || "Microsoft user", email: profile.mail || profile.userPrincipalName || "" };
+      return { name: profile.displayName || profile.mail || profile.userPrincipalName || "Microsoft user",
+        email: profile.mail || profile.userPrincipalName || "" };
     }
 
     itemRoute(itemId) {
@@ -80,11 +71,9 @@
       if (this.isSharedWorkbookConfigured()) {
         route = "/drives/" + encodeURIComponent(config.workbookDriveId) + "/items/" + encodeURIComponent(config.workbookItemId);
       } else {
-        const name = encodeURIComponent(config.workbookName || "GanatheFinance.xlsx");
-        route = "/me/drive/root:/" + name;
+        route = "/me/drive/root:/" + encodeURIComponent(config.workbookName || "GanatheFinance.xlsx");
       }
-      const response = await this.graph(route + "?$select=id,name,eTag,size,lastModifiedDateTime,parentReference");
-      this.lastItem = await response.json();
+      this.lastItem = await (await this.graph(route + "?$select=id,name,eTag,size,lastModifiedDateTime,parentReference")).json();
       return this.lastItem;
     }
 
@@ -97,25 +86,19 @@
 
     async createWorkbookInDrive() {
       const name = encodeURIComponent(config.workbookName || "GanatheFinance.xlsx");
-      const workbook = this.createWorkbook();
-      const bytes = root.XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const bytes = root.XLSX.write(this.createWorkbook(), { bookType: "xlsx", type: "array" });
       const response = await this.graph("/me/drive/root:/" + name + ":/content", {
-        method: "PUT",
-        headers: { "Content-Type": "application/octet-stream" },
-        body: new Blob([bytes], { type: MIME })
+        method: "PUT", headers: { "Content-Type": "application/octet-stream" }, body: new Blob([bytes], { type: MIME })
       });
       this.lastItem = await response.json();
       return this.lastItem;
     }
 
     async ensureWorkbook() {
-      try {
-        await this.getFileMetadata();
-      } catch (error) {
+      try { await this.getFileMetadata(); }
+      catch (error) {
         if (error.status !== 404) throw error;
-        if (this.isSharedWorkbookConfigured()) {
-          throw new Error("The configured shared workbook could not be found. Check that the owner shared it with this Microsoft account and that the shared workbook IDs are correct.");
-        }
+        if (this.isSharedWorkbookConfigured()) throw new Error("The shared workbook could not be found. Check its sharing permissions and configured IDs.");
         await this.createWorkbookInDrive();
       }
       return this.loadWorkbook();
@@ -123,13 +106,11 @@
 
     async loadWorkbook() {
       const item = await this.getFileMetadata();
-      const route = this.itemRoute(item.id);
-      const metadata = await (await this.graph(route + "?$select=id,name,eTag,parentReference,@microsoft.graph.downloadUrl")).json();
+      const metadata = await (await this.graph(this.itemRoute(item.id) + "?$select=id,name,eTag,parentReference,@microsoft.graph.downloadUrl")).json();
       if (!metadata["@microsoft.graph.downloadUrl"]) throw new Error("OneDrive did not provide a workbook download URL.");
       const download = await fetch(metadata["@microsoft.graph.downloadUrl"]);
       if (!download.ok) throw new Error("Workbook download failed (" + download.status + ").");
-      const bytes = await download.arrayBuffer();
-      return { workbook: root.XLSX.read(bytes, { type: "array" }), item: metadata };
+      return { workbook: root.XLSX.read(await download.arrayBuffer(), { type: "array" }), item: metadata };
     }
 
     rows(workbook, sheetName) {
@@ -140,29 +121,20 @@
     async saveWorkbook(workbook, item) {
       if (!item || !item.id || !item.eTag) throw new Error("Workbook version information is missing. Reload before saving.");
       const token = await this.token();
-      const route = this.itemRoute(item.id);
-      const sessionResponse = await fetch((config.graphBase || "https://graph.microsoft.com/v1.0") + route + "/createUploadSession", {
+      const response = await fetch((config.graphBase || "https://graph.microsoft.com/v1.0") + this.itemRoute(item.id) + "/createUploadSession", {
         method: "POST",
         headers: { Authorization: "Bearer " + token, "Content-Type": "application/json", "If-Match": item.eTag },
         body: JSON.stringify({ item: { "@microsoft.graph.conflictBehavior": "replace" } })
       });
-      if (sessionResponse.status === 412) {
-        const conflict = new Error("This workbook changed on another device. Reloading the latest version before retrying.");
-        conflict.status = 412; throw conflict;
-      }
-      if (!sessionResponse.ok) throw new Error("Could not start the OneDrive save session (" + sessionResponse.status + ").");
-      const session = await sessionResponse.json();
+      if (response.status === 412) { const e = new Error("Workbook changed on another device. Reloading before retry."); e.status = 412; throw e; }
+      if (!response.ok) throw new Error("Could not start the OneDrive save session (" + response.status + ").");
+      const session = await response.json();
       const bytes = root.XLSX.write(workbook, { bookType: "xlsx", type: "array" });
       const blob = new Blob([bytes], { type: MIME });
       const upload = await fetch(session.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Range": "bytes 0-" + (blob.size - 1) + "/" + blob.size },
-        body: blob
+        method: "PUT", headers: { "Content-Range": "bytes 0-" + (blob.size - 1) + "/" + blob.size }, body: blob
       });
-      if (upload.status === 412) {
-        const conflict = new Error("Workbook version conflict. Reload the latest file and retry.");
-        conflict.status = 412; throw conflict;
-      }
+      if (upload.status === 412) { const e = new Error("Workbook version conflict. Reload the latest file and retry."); e.status = 412; throw e; }
       if (!upload.ok) throw new Error("Workbook upload failed (" + upload.status + ").");
       this.lastItem = await upload.json();
       return this.lastItem;
@@ -174,10 +146,8 @@
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const loaded = await this.loadWorkbook();
         mutator(loaded.workbook);
-        try {
-          await this.saveWorkbook(loaded.workbook, loaded.item);
-          return this.loadWorkbook();
-        } catch (error) {
+        try { await this.saveWorkbook(loaded.workbook, loaded.item); return this.loadWorkbook(); }
+        catch (error) {
           lastError = error;
           if (error.status !== 412 || attempt === maxAttempts - 1) throw error;
           await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
@@ -188,28 +158,22 @@
 
     async addTransaction(transaction) {
       return this.mutate(workbook => {
-        const existing = this.rows(workbook, "Transactions");
-        if (existing.some(row => row.TransactionID === transaction.id)) return;
-        const row = {
-          TransactionID: transaction.id, Date: transaction.date, Type: transaction.type,
-          Description: transaction.description, Category: transaction.category,
-          Amount: transaction.amount, Currency: transaction.currency,
-          PaymentType: transaction.paymentType, PaidBy: transaction.paidBy,
-          TripID: transaction.tripId || "", SplitMode: transaction.splitMode || "Equal",
-          SplitMembers: transaction.splitMembers || "", Notes: transaction.notes || "",
-          CreatedAt: transaction.createdAt || new Date().toISOString(), UpdatedAt: new Date().toISOString()
-        };
+        if (this.rows(workbook, "Transactions").some(row => row.ID === transaction.id)) return;
+        const row = { ID: transaction.id, Date: transaction.date, Type: transaction.type,
+          Description: transaction.description, Category: transaction.category, Amount: transaction.amount,
+          Currency: transaction.currency, "Payment Method": transaction.paymentType || "Other",
+          "Paid By": transaction.paidBy || "Me", Trip: transaction.tripId || "",
+          "Shared With": transaction.sharedWith || "", Notes: transaction.notes || "" };
         root.XLSX.utils.sheet_add_json(workbook.Sheets.Transactions, [row], { header: TX_HEADERS, skipHeader: true, origin: -1 });
       });
     }
 
     async addTrip(trip) {
       return this.mutate(workbook => {
-        const existing = this.rows(workbook, "Trips");
-        if (existing.some(row => row.TripID === trip.id)) return;
-        const row = { TripID: trip.id, TripName: trip.name, Destination: trip.destination || "",
-          StartDate: trip.startDate || "", EndDate: trip.endDate || "", Status: "Active",
-          Members: trip.members || "", CreatedAt: new Date().toISOString() };
+        if (this.rows(workbook, "Trips").some(row => row.ID === trip.id)) return;
+        const row = { ID: trip.id, Trip: trip.name, Destination: trip.destination || "",
+          "Start Date": trip.startDate || "", "End Date": trip.endDate || "",
+          Participants: trip.members || "", Status: "Active" };
         root.XLSX.utils.sheet_add_json(workbook.Sheets.Trips, [row], { header: TRIP_HEADERS, skipHeader: true, origin: -1 });
       });
     }
@@ -224,6 +188,5 @@
       return { driveId: this.lastItem.parentReference && this.lastItem.parentReference.driveId || "", itemId: this.lastItem.id || "" };
     }
   }
-
   root.GanatheOneDrive = OneDriveRepository;
 })(window);
