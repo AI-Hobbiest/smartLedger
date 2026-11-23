@@ -62,13 +62,63 @@
     return "Misc / Others";
   }
 
+  function normalizeCurrency(code, fallback) {
+    const value = String(code || fallback || "AED").toUpperCase().replace(/\s/g, "");
+    if (/^(INR|RS\.?|RUPEES?)$/.test(value)) return "INR";
+    if (/^(DHS?|DIRHAMS?)$/.test(value)) return "AED";
+    if (value === "$") return "USD";
+    if (CURRENCY_CODES.includes(value)) return value;
+    return fallback || "AED";
+  }
+
+  function extractMoney(input, fallbackCurrency) {
+    const text = String(input || "");
+    const withoutDates = text.replace(/\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?\b/g, " ");
+    const currency = "(?:AED|DHS?|DIRHAMS?|INR|RS\\.?|RUPEES?|USD|OMR|SGD|EUR|GBP|\\$)";
+    const match = withoutDates.match(new RegExp("(?:\\b(" + currency + ")\\s*)?([0-9][0-9,]*(?:\\.\\d{1,2})?)(?:\\s*(" + currency + "))?", "i"));
+    if (!match) return null;
+    const amount = normalizeAmount(match[2]);
+    return { amount, currency: normalizeCurrency(match[1] || match[3], fallbackCurrency), raw: match[0] };
+  }
+
+  function inferPaymentType(text) {
+    const value = String(text || "");
+    return /credit card|\bcc\b/i.test(value) ? "Credit Card" :
+      /debit card|\bdc\b/i.test(value) ? "Debit Card" :
+      /bank transfer|transferred/i.test(value) ? "Bank Transfer" :
+      /wallet|apple pay|google pay/i.test(value) ? "Digital Wallet" :
+      /\bcash\b/i.test(value) ? "Cash" : "Other";
+  }
+
+  function inferIncomePurpose(text) {
+    const value = String(text || "").toLowerCase();
+    if (/\b(repayment|repaid|repay|paid back|payback|returned my money|money returned|loan returned)\b/.test(value)) return "Repayment";
+    if (/\b(gift|present)\b/.test(value)) return "Gift";
+    if (/\b(loan|borrowed|lent)\b/.test(value)) return "Loan";
+    if (/\b(refund|reimburse(?:ment|d)?)\b/.test(value)) return "Refund";
+    if (/\b(salary|payroll|wages)\b/.test(value)) return "Salary";
+    return "";
+  }
+
+  function extractMoneySource(text) {
+    const value = String(text || "").toLowerCase();
+    const relation = value.match(/\bmy\s+([a-z][a-z'-]*)\s+(?:paid|sent|gave)\s+me\b|\bmy\s+([a-z][a-z'-]*)\s+transferred\s+(?:money\s+)?to\s+me\b/);
+    if (relation) {
+      const name = relation[1] || relation[2];
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+    const from = value.match(/\bfrom\s+(?:my\s+)?([a-z][a-z'-]*)\b/);
+    if (from) return from[1].charAt(0).toUpperCase() + from[1].slice(1);
+    return "";
+  }
+
   function parseCommand(input, defaults) {
     const text = String(input || "").trim();
     if (!text) return { kind: "unknown", reason: "empty" };
     const lower = text.toLowerCase();
     const reportWords = /\b(report|summary|total|how much|show|list|spending|expenses)\b/.test(lower);
     if (reportWords && /\b(today|yesterday|this week|week|this month|month|quarter|year|annual|trip|expenses|spending)\b/.test(lower) &&
-        !/\b(spent|paid|bought|purchase|expense of)\s+(?:aed|inr|usd|omr|sgd|eur|gbp)?\s*\d/i.test(lower)) {
+        !/\b(spent|paid|bought|purchase|received|salary|earned|credited|reimbursement|refund|income|expense)\b/.test(lower)) {
       const period = /\btoday\b/.test(lower) ? "today" :
         /\byesterday\b/.test(lower) ? "yesterday" :
         /\b(this week|week)\b/.test(lower) ? "week" :
@@ -78,46 +128,59 @@
       return { kind: period === "trip" ? "trip_report" : "report", period, sourceText: text };
     }
 
-    const amountPattern = /(?:\b(AED|DHS?|DIRHAMS?|INR|RS\.?|RUPEES?|USD|OMR|SGD|EUR|GBP)\s*)?([0-9][0-9,]*(?:\.\d{1,2})?)(?:\s*(AED|DHS?|DIRHAMS?|INR|RS\.?|RUPEES?|USD|OMR|SGD|EUR|GBP))?/i;
-    const amountMatch = text.match(amountPattern);
-    const income = /\b(received|salary|income|earned|credited|reimbursement|refund)\b/i.test(text);
-    const type = income ? "Income" : "Expense";
+    const incomeSignal = /\b(received|credited|earned|salary|payroll|wages|refund|reimbursement|repaid|returned|paid\s+me|sent\s+me|gave\s+me|transferred\s+to\s+me|came\s+in|got\s+(?:paid|some money|money|cash|a payment))\b/i.test(text);
+    const expenseSignal = /\b(spent|bought|purchased|purchase|paid|donated|expense|payment\s+for)\b/i.test(text);
+    const addIncome = /\b(add|record|log|new|enter)\b.{0,35}\b(income|salary|pay|received)\b/i.test(text);
+    const addExpense = /\b(add|record|log|new|enter)\b.{0,35}\b(expense|purchase|spending)\b/i.test(text);
+    const type = incomeSignal || addIncome ? "Income" : expenseSignal || addExpense ? "Expense" : "";
 
-    if (amountMatch && /\b(spent|paid|bought|purchase|received|salary|earned|credited|reimbursement|refund|income|expense)\b/i.test(text)) {
-      const amount = normalizeAmount(amountMatch[2]);
-      const code = String(amountMatch[1] || amountMatch[3] || (defaults && defaults.currency) || "AED").toUpperCase();
-      const currency = /^(INR|RS\.?|RUPEES?)$/.test(code) ? "INR" :
-        /^(DHS?|DIRHAMS?)$/.test(code) ? "AED" : CURRENCY_CODES.includes(code) ? code : "AED";
-      const cleaned = text.replace(amountMatch[0], " ")
-        .replace(/\b(i|we|my|our|spent|paid|bought|purchase|received|salary|income|earned|credited|reimbursement|refund|expense|of|for|on|at|in|using|with|today|yesterday|tomorrow|day before yesterday|this)\b/gi, " ")
+    if (type) {
+      const money = extractMoney(text, defaults && defaults.currency);
+      const source = type === "Income" ? extractMoneySource(text) : "";
+      const purpose = type === "Income" ? inferIncomePurpose(text) : "";
+      let cleaned = text
+        .replace(/\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?\b/g, " ");
+      if (money && money.raw) cleaned = cleaned.replace(money.raw, " ");
+      cleaned = cleaned
+        .replace(/\b(add|record|log|new|enter|an?|the|i|we|my|our|me|spent|paid|bought|purchased|purchase|received|salary|payroll|wages|income|earned|credited|reimbursement|refund|expense|payment|for|of|on|at|in|using|with|today|yesterday|tomorrow|day before yesterday|this|some|money|back|from)\b/gi, " ")
         .replace(/\b(aed|dhs?|dirhams?|inr|rs\.?|rupees?|usd|omr|sgd|eur|gbp)\b|\$/gi, " ")
         .replace(/\b(cash|credit card|debit card|bank transfer|digital wallet|wallet|cc|dc)\b/gi, " ")
         .replace(/\s+/g, " ").replace(/^[\s,.-]+|[\s,.-]+$/g, "").trim();
-      const description = cleaned || (income ? "Income" : "Expense");
-      const paymentType = /credit card|\bcc\b/i.test(text) ? "Credit Card" :
-        /debit card|\bdc\b/i.test(text) ? "Debit Card" :
-        /bank transfer|transferred/i.test(text) ? "Bank Transfer" :
-        /wallet|apple pay|google pay/i.test(text) ? "Digital Wallet" :
-        /\bcash\b/i.test(text) ? "Cash" : "Other";
+      let description = "";
+      if (type === "Income") {
+        if (purpose === "Salary") description = "Salary";
+        else if (purpose === "Refund") description = "Refund received";
+        else if (source) description = "Money received from " + source;
+        else description = cleaned;
+      } else {
+        description = cleaned;
+      }
+      const category = inferCategory(text + " " + description, type);
+      const transaction = {
+        id: makeId("TX"),
+        date: parseDate(text, defaults && defaults.now),
+        type,
+        amount: money ? money.amount : null,
+        currency: money ? money.currency : normalizeCurrency("", defaults && defaults.currency),
+        description: description ? description.charAt(0).toUpperCase() + description.slice(1) : "",
+        category,
+        paidBy: source || (defaults && defaults.paidBy) || "Me",
+        paymentType: inferPaymentType(text),
+        tripId: (defaults && defaults.tripId) || "",
+        notes: purpose ? "Purpose: " + purpose : "",
+        sourceText: text
+      };
+      const needsPurpose = type === "Income" && !!source && !purpose;
+      const needsDescription = !transaction.description;
       return {
-        kind: "transaction_draft",
-        transaction: {
-          id: makeId("TX"),
-          date: parseDate(text, defaults && defaults.now),
-          type, amount, currency,
-          description: description.charAt(0).toUpperCase() + description.slice(1),
-          category: inferCategory(text + " " + description, type),
-          paidBy: (defaults && defaults.paidBy) || "Me",
-          paymentType,
-          tripId: (defaults && defaults.tripId) || "",
-          notes: "",
-          sourceText: text
-        }
+        kind: money && !needsPurpose && !needsDescription ? "transaction_draft" : "transaction_intent",
+        transaction,
+        needsPurpose,
+        needsDescription,
+        sourceText: text
       };
     }
 
-    if (/\b(add|record|new)\b/.test(lower) && /\b(income|salary|received)\b/.test(lower)) return { kind: "open_form", form: "income" };
-    if (/\b(add|record|new)\b/.test(lower) && /\b(expense|transaction)\b/.test(lower)) return { kind: "open_form", form: "expense" };
     if (/\bbudget\b/.test(lower)) return { kind: "open_form", form: "budget" };
     if (/\btrip\b/.test(lower) && /\b(create|add|new)\b/.test(lower)) return { kind: "open_form", form: "trip" };
     return { kind: "unknown", reason: "not_understood", sourceText: text };
@@ -145,6 +208,6 @@
     return { count: rows.length, totalByCurrency, bounds, rows };
   }
 
-  root.SmartLedgerCore = { CATEGORIES, INCOME_CATEGORIES, CURRENCY_CODES, PAYMENT_TYPES, makeId, normalizeAmount, localDateISO, parseDate, inferCategory, parseCommand, periodBounds, summarize };
+  root.SmartLedgerCore = { CATEGORIES, INCOME_CATEGORIES, CURRENCY_CODES, PAYMENT_TYPES, makeId, normalizeAmount, localDateISO, parseDate, inferCategory, extractMoney, inferPaymentType, inferIncomePurpose, parseCommand, periodBounds, summarize };
   if (typeof module !== "undefined" && module.exports) module.exports = root.SmartLedgerCore;
 })(typeof window !== "undefined" ? window : globalThis);
