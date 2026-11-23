@@ -1,0 +1,11 @@
+{
+  "name": "Ganathe Finance — Smart Ledger Preview",
+  "short_name": "Ledger Preview",
+  "description": "Development preview of Ganathe Finance Smart Ledger.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f6fa",
+  "theme_color": "#20364b",
+  "icons": []
+}

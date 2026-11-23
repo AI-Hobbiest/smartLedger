@@ -1,0 +1,7 @@
+Smart Ledger Feature Preview
+Source branch: foundation-v2
+Source commit: 9bccea4a494243402379a30d115a34bbfd5becbd
+Published path: /smartLedger/preview/
+Purpose: feature testing with synthetic data only
+Storage: browser-local development repository; no sync or encryption
+Published from a separate additive directory. Main root application files are unchanged.
