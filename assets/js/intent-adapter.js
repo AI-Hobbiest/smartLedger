@@ -21,9 +21,11 @@
     if(token==="$"||token==="usd")return "USD";
     return token==="omr"?"OMR":token==="sgd"?"SGD":token==="eur"?"EUR":token==="gbp"?"GBP":"AED";
   };
+  const incomingFromPerson = text => /\bmy\s+[a-z][a-z'-]*\s+(?:paid|sent|gave)\s+me\b|\bmy\s+[a-z][a-z'-]*\s+transferred\s+(?:money\s+)?to\s+me\b|\b(?:someone|somebody|they)\s+(?:paid|sent|gave)\s+me\b/i.test(String(text||""));
   const typeFrom = text => {
     const t=String(text||"");
-    const income=/\b(received|salary|income|earned|credited|reimbursement|refund|cashback|reimbursed|got paid)\b/i.test(t);
+    if(incomingFromPerson(t))return "Income";
+    const income=/\b(received|salary|income|earned|credited|reimbursement|refund|cashback|reimbursed|got paid|paid me|sent me|gave me|money came in)\b/i.test(t);
     const expense=/\b(spent|spend|paid|pay|purchase|purchased|bought|expense|expenses)\b/i.test(t);
     return income===expense?null:(income?"Income":"Expense");
   };
@@ -86,7 +88,7 @@
   const cleanDescription = (segment, amountMatch) => {
     let value=String(segment||"");
     if(amountMatch)value=value.replace(amountMatch.raw," ");
-    value=value.replace(/\b(i|we|my|our|spent|spend|paid|pay|purchase|purchased|bought|for|on|at|in|using|with|today|yesterday|tomorrow|day before yesterday|received|salary|income|earned|credited|reimbursement|reimbursed|refund|cashback|expense|of|and|also|plus|then|aed|dhs?|dirhams?|inr|rs\.?|rupees?|usd|omr|sgd|eur|gbp)\b/gi," ");
+    value=value.replace(/\b(add|record|log|new|enter|a|an|the|i|we|my|our|me|some|money|spent|spend|paid|pay|purchase|purchased|bought|for|on|at|in|using|with|today|yesterday|tomorrow|day before yesterday|received|salary|income|earned|credited|reimbursement|reimbursed|refund|cashback|expense|expenses|of|and|also|plus|then|aed|dhs?|dirhams?|inr|rs\.?|rupees?|usd|omr|sgd|eur|gbp)\b/gi," ");
     value=value.replace(/\b(credit card|debit card|bank transfer|digital wallet|cash|wallet|cc)\b/gi," ");
     value=value.replace(/\$|[,;.!?]/g," ").replace(/\s+/g," ").trim();
     return value?value.charAt(0).toUpperCase()+value.slice(1):"Transaction";
@@ -106,6 +108,51 @@
       date,category,description,payment,spentBy:"TEST_USER_1",spentByLabel:"Test User 1",notes:"",
       original:segment,source:"local-fallback"
     };
+  };
+  const inferIncomePurpose = text => {
+    const value=String(text||"").toLowerCase();
+    if(/\b(repayment|repaid|repay|payback|paid back|returned my money|money returned|loan returned|returning money|money i lent|lent him|lent her)\b/.test(value))return "Repayment";
+    if(/\b(gift|present)\b/.test(value))return "Gift";
+    if(/\b(loan|borrowed|lent)\b/.test(value))return "Loan";
+    if(/\b(refund|reimburse(?:ment|d)?)\b/.test(value))return "Refund";
+    if(/\b(salary|payroll|wages)\b/.test(value))return "Salary";
+    return "";
+  };
+  const sourceFrom = text => {
+    const value=String(text||"").toLowerCase();
+    const match=value.match(/\bmy\s+([a-z][a-z'-]*)\s+(?:paid|sent|gave)\s+me\b|\bmy\s+([a-z][a-z'-]*)\s+transferred\s+(?:money\s+)?to\s+me\b|\bfrom\s+(?:my\s+)?([a-z][a-z'-]*)\b/);
+    const name=match&&(match[1]||match[2]||match[3]);
+    return name?name.charAt(0).toUpperCase()+name.slice(1):"";
+  };
+  const transactionFromText = text => {
+    const type=typeFrom(text);
+    const add=/\b(add|record|log|new|enter)\b.{0,35}\b(expense|income|salary|purchase|spending|transaction)\b/i.test(text);
+    if(!type&&!add)return null;
+    const resolvedType=type||( /\bincome|salary\b/i.test(text)?"Income":"Expense");
+    const amount=parseAmountMatches(text)[0]||null;
+    const source=resolvedType==="Income"?sourceFrom(text):"";
+    const purpose=resolvedType==="Income"?inferIncomePurpose(text):"";
+    const description=resolvedType==="Income"
+      ? (purpose==="Salary"?"Salary":purpose==="Refund"?"Refund received":source?"Money received from "+source:cleanDescription(text,amount))
+      : cleanDescription(text,amount);
+    const hasDescription=!!description&&description!=="Transaction"&&description.toLowerCase()!=="expense";
+    const currency=amount&&amount.currency||currencyFrom(text)||"AED";
+    const rate=RATES[currency]||1;
+    const notes=source?"Received from: "+source+(purpose?" · Purpose: "+purpose:""):(purpose?"Purpose: "+purpose:"");
+    return {type:resolvedType,amount:amount?amount.amount:null,currency,fxRateToBase:rate,baseAmount:amount?amount.amount*rate:null,
+      date:dateFrom(text),category:categoryFrom(text+" "+description,resolvedType),description:hasDescription?description:"Transaction",
+      payment:paymentFrom(text),spentBy:"TEST_USER_1",spentByLabel:"Test User 1",notes,original:text,source:"local-fallback",
+      receivedFrom:source,purpose,needsDescription:!hasDescription,needsPurpose:resolvedType==="Income"&&!!source&&!purpose};
+  };
+  const clarificationQuestion = transaction => {
+    if(!transaction.amount){
+      if(transaction.receivedFrom)return "How much did "+transaction.receivedFrom.toLowerCase()+" pay you? Include the currency if it wasn't AED.";
+      if(transaction.description!=="Transaction")return "How much did you spend on "+transaction.description+"? Include currency if it wasn't AED.";
+      return "How much was the "+transaction.type.toLowerCase()+"? Include the currency if it wasn't AED.";
+    }
+    if(transaction.needsPurpose)return "What was this payment from "+transaction.receivedFrom.toLowerCase()+" for — a repayment, gift, loan, or something else?";
+    if(transaction.needsDescription)return transaction.type==="Income"?"What was this income from?":"What was the expense for?";
+    return "";
   };
   const normalizeProviderDraft = (raw, defaults={}) => {
     if(!raw||typeof raw!=="object")throw new Error("The language provider returned an invalid transaction draft.");
@@ -160,6 +207,13 @@
       async interpret(input, conversation={}) {
         const text=clean(input);
         if(!text)return {intent:"unknown",source:"local-fallback",text:""};
+        const amountsInMessage=parseAmountMatches(text);
+        const cue=/\b(spent|spend|paid|pay|purchase|purchased|bought|expense|expenses|received|earned|credited|salary|refund|reimbursed|paid me|sent me|gave me)\b/i.test(text)
+          || /\b(add|record|log|new|enter)\b.{0,35}\b(expense|income|salary|pay|purchase|transaction)\b/i.test(text);
+        const incomplete=cue?transactionFromText(text):null;
+        if(incomplete && (!amountsInMessage.length || incomplete.needsPurpose || incomplete.needsDescription)){
+          return {intent:"clarification",source:"local-fallback",question:clarificationQuestion(incomplete),pendingTransaction:incomplete};
+        }
         if(provider&&typeof provider.interpret==="function"){
           try{
             const result=await provider.interpret({message:text,context:conversation,schemaVersion:"1.0"});
@@ -186,5 +240,7 @@
       hasProvider(){return !!(provider&&typeof provider.interpret==="function");}
     };
   };
-  window.SmartLedgerIntentAdapter={create,validateProviderResult};
+  window.SmartLedgerIntentAdapter={create,validateProviderResult,
+    parseAmount(text){return parseAmountMatches(String(text||""))[0]||null;},
+    inferIncomePurpose,incomingFromPerson,transactionFromText};
 })();
