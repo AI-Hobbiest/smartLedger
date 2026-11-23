@@ -5,6 +5,7 @@
   const repository = window.GanatheLedgerRepository.create();
   let data = { transactions: [], trips: [], budgets: [] };
   let currentDraft = null;
+  let conversationState = null;
   let reportRows = [];
 
   const today = () => core.localDateISO(new Date());
@@ -150,11 +151,13 @@
 
   function showDraft(draft) {
     currentDraft = draft.transaction;
+    conversationState = null;
     const row = draft.transaction, wrap = document.createElement("div");
     wrap.className = "chat-message assistant";
     const avatar = document.createElement("span"); avatar.className = "avatar"; avatar.textContent = "GL";
     const body = document.createElement("div"); body.className = "message-body";
-    body.innerHTML = '<p><strong>Review this transaction before saving.</strong></p><p>' + safe(row.type) + ' · ' + safe(money(row.amount,row.currency)) + '</p><p>' + safe(row.description) + ' · ' + safe(row.category) + '</p><p>' + safe(row.date) + ' · ' + safe(row.paymentType) + ' · Paid by ' + safe(row.paidBy) + '</p>';
+    const partyLabel = row.type === "Income" ? "Received from " : "Paid by ";
+    body.innerHTML = '<p><strong>Review this transaction before saving.</strong></p><p>' + safe(row.type) + ' · ' + safe(money(row.amount,row.currency)) + '</p><p>' + safe(row.description) + ' · ' + safe(row.category) + '</p><p>' + safe(row.date) + ' · ' + safe(row.paymentType) + ' · ' + safe(partyLabel + (row.paidBy || "Me")) + '</p>' + (row.notes ? '<p>' + safe(row.notes) + '</p>' : '');
     const actions = document.createElement("div"); actions.className = "draft-actions";
     const confirmButton = document.createElement("button"); confirmButton.type = "button"; confirmButton.className = "button button-primary button-small"; confirmButton.textContent = "Confirm & save";
     const editButton = document.createElement("button"); editButton.type = "button"; editButton.className = "button button-outline button-small"; editButton.textContent = "Edit details";
@@ -171,6 +174,118 @@
     cancelButton.addEventListener("click", () => { currentDraft = null; addChat("Draft cancelled. Nothing was saved.", "assistant"); });
     actions.append(confirmButton, editButton, cancelButton); body.appendChild(actions); wrap.append(avatar, body);
     $("chatStream").appendChild(wrap); $("chatStream").scrollTop = $("chatStream").scrollHeight;
+  }
+
+  function askForNextTransactionDetail() {
+    if (!conversationState) return;
+    const state = conversationState;
+    const row = state.transaction;
+    if (!Number.isFinite(Number(row.amount)) || Number(row.amount) <= 0) {
+      state.stage = "amount";
+      if (row.type === "Income" && row.paidBy && row.paidBy !== "Me") {
+        addChat("How much did " + row.paidBy + " pay you? Include the currency if it wasn't AED.", "assistant");
+      } else {
+        addChat("How much was the " + row.type.toLowerCase() + "? Include the currency if it wasn't AED.", "assistant");
+      }
+      return;
+    }
+    if (state.needsDescription || !row.description) {
+      state.stage = "description";
+      addChat(row.type === "Income" ? "What was this income from?" : "What was the expense for?", "assistant");
+      return;
+    }
+    if (state.needsPurpose && !row.notes) {
+      state.stage = "purpose";
+      addChat("What was this payment for — a repayment, gift, loan, or something else?", "assistant");
+      return;
+    }
+    const completed = row;
+    conversationState = null;
+    showDraft({ transaction: completed });
+  }
+
+  function startTransactionConversation(parsed) {
+    const row = parsed.transaction || {};
+    conversationState = {
+      transaction: { ...row },
+      needsPurpose: !!parsed.needsPurpose,
+      needsDescription: !!parsed.needsDescription,
+      stage: ""
+    };
+    askForNextTransactionDetail();
+  }
+
+  function continueTransactionConversation(reply) {
+    if (!conversationState) return;
+    const value = String(reply || "").trim();
+    const state = conversationState;
+    const row = state.transaction;
+    if (/^(cancel|stop|never mind|nevermind|forget it)$/i.test(value)) {
+      conversationState = null;
+      addChat("Okay, cancelled. Nothing was saved.", "assistant");
+      return;
+    }
+
+    if (state.stage === "amount") {
+      const moneyValue = core.extractMoney(value, row.currency || "AED");
+      if (!moneyValue) {
+        addChat("I still need the amount. You can enter it like “AED 120” or “120”.", "assistant");
+        return;
+      }
+      row.amount = moneyValue.amount;
+      row.currency = moneyValue.currency;
+      const purpose = row.type === "Income" ? core.inferIncomePurpose(value) : "";
+      if (purpose) row.notes = "Purpose: " + purpose;
+      const paymentType = core.inferPaymentType(value);
+      if (paymentType !== "Other") row.paymentType = paymentType;
+      let remainder = value.replace(moneyValue.raw, " ")
+        .replace(/\b(aed|dhs?|dirhams?|inr|rs\.?|rupees?|usd|omr|sgd|eur|gbp)\b|\$/gi, " ")
+        .replace(/\b(cash|credit card|debit card|bank transfer|digital wallet|wallet|cc|dc|for|at|in|on|as)\b/gi, " ")
+        .replace(/\s+/g, " ").trim();
+      if (remainder && state.needsDescription) {
+        row.description = remainder.charAt(0).toUpperCase() + remainder.slice(1);
+        row.category = core.inferCategory(remainder, row.type);
+        state.needsDescription = false;
+      } else if (remainder && state.needsPurpose && !row.notes) {
+        row.notes = "Purpose: " + remainder;
+        state.needsPurpose = false;
+      }
+      askForNextTransactionDetail();
+      return;
+    }
+
+    if (state.stage === "description") {
+      if (!value) {
+        addChat("Please tell me what the " + row.type.toLowerCase() + " was for.", "assistant");
+        return;
+      }
+      row.description = value.charAt(0).toUpperCase() + value.slice(1);
+      row.category = core.inferCategory(value, row.type);
+      const purpose = row.type === "Income" ? core.inferIncomePurpose(value) : "";
+      if (purpose) row.notes = "Purpose: " + purpose;
+      state.needsDescription = false;
+      askForNextTransactionDetail();
+      return;
+    }
+
+    if (state.stage === "purpose") {
+      if (!value) {
+        addChat("Please describe the purpose of the payment, or say “something else”.", "assistant");
+        return;
+      }
+      const purpose = core.inferIncomePurpose(value);
+      row.notes = "Purpose: " + (purpose || value);
+      if (purpose === "Refund") row.category = "Refund";
+      else if (purpose === "Salary") row.category = "Salary";
+      state.needsPurpose = false;
+      askForNextTransactionDetail();
+    }
+  }
+
+  function startQuickTransaction(type) {
+    addChat(type === "Income" ? "Let's add money received." : "Let's add an expense.", "assistant");
+    const parsed = core.parseCommand(type === "Income" ? "Add income" : "Add an expense", { currency: "AED", paidBy: "Me" });
+    startTransactionConversation(parsed);
   }
 
   function showError(error) {
@@ -280,16 +395,22 @@
 
   async function handleCommand(text) {
     addChat(text, "user");
+    if (conversationState) {
+      continueTransactionConversation(text);
+      return;
+    }
     const parsed = core.parseCommand(text, { currency: "AED", paidBy: "Me" });
-    if (parsed.kind === "transaction_draft") { showDraft(parsed); return; }
+    if (parsed.kind === "transaction_draft" || parsed.kind === "transaction_intent") {
+      startTransactionConversation(parsed);
+      return;
+    }
     if (parsed.kind === "report" || parsed.kind === "trip_report") { runReport(parsed.period); return; }
     if (parsed.kind === "open_form") {
       if (parsed.form === "budget") openBudgetForm();
       else if (parsed.form === "trip") openTripForm();
-      else openTransactionForm({ type: parsed.form === "income" ? "Income" : "Expense" });
       return;
     }
-    addChat("I couldn't confidently interpret that. Use Add expense, Add income, Create a trip, Set a budget or the report controls.", "assistant");
+    addChat("I didn't quite catch that. Try “Add an expense”, “I received money from my brother”, or ask me for a spending report. I'll ask for any missing transaction details here in chat.", "assistant");
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
@@ -300,13 +421,14 @@
 
     document.querySelectorAll("[data-action]").forEach(button => button.addEventListener("click", () => {
       const action = button.dataset.action;
-      if (action === "expense") openTransactionForm({ type:"Expense" });
-      if (action === "income") openTransactionForm({ type:"Income" });
+      if (action === "expense") startQuickTransaction("Expense");
+      if (action === "income") startQuickTransaction("Income");
       if (action === "trip") openTripForm();
       if (action === "budget") openBudgetForm();
     }));
     document.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", () => $(button.dataset.close).close()));
-    $("addExpenseLink").addEventListener("click", () => openTransactionForm({ type:"Expense" }));
+    $("addExpenseLink").addEventListener("click", () => startQuickTransaction("Expense"));
+    $("manualTransactionEntry").addEventListener("click", () => openTransactionForm({ type:"Expense" }));
     $("addTripLink").addEventListener("click", () => openTripForm());
     $("addBudgetLink").addEventListener("click", () => openBudgetForm());
     document.querySelectorAll("[data-report]").forEach(button => button.addEventListener("click", () => runReport(button.dataset.report)));
