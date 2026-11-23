@@ -28,23 +28,23 @@
   }
   function normalizeTransaction(row) {
     return {
-      id: row.TransactionID || row.id,
+      id: row.ID || row.TransactionID || row.id,
       date: row.Date || row.date,
       type: row.Type || row.type || "Expense",
       description: row.Description || row.description || "",
       category: row.Category || row.category || "Misc / Others",
       amount: Number(row.Amount || row.amount || 0),
       currency: row.Currency || row.currency || "AED",
-      paymentType: row.PaymentType || row.paymentType || "Other",
-      paidBy: row.PaidBy || row.paidBy || "Me",
-      tripId: row.TripID || row.tripId || "",
+      paymentType: row["Payment Method"] || row.PaymentType || row.paymentType || "Other",
+      paidBy: row["Paid By"] || row.PaidBy || row.paidBy || "Me",
+      tripId: row.Trip || row.TripID || row.tripId || "",
       splitMode: row.SplitMode || row.splitMode || "Equal",
-      splitMembers: row.SplitMembers || row.splitMembers || "",
+      splitMembers: row["Shared With"] || row.SplitMembers || row.splitMembers || "",
       notes: row.Notes || row.notes || ""
     };
   }
   function normalizeTrip(row) {
-    return { id: row.TripID || row.id, name: row.TripName || row.name || "", destination: row.Destination || row.destination || "", startDate: row.StartDate || row.startDate || "", endDate: row.EndDate || row.endDate || "", status: row.Status || row.status || "Active", members: row.Members || row.members || "" };
+    return { id: row.ID || row.TripID || row.id, name: row.Trip || row.TripName || row.name || "", destination: row.Destination || row.destination || "", startDate: row["Start Date"] || row.StartDate || row.startDate || "", endDate: row["End Date"] || row.EndDate || row.endDate || "", status: row.Status || row.status || "Active", members: row.Participants || row.Members || row.members || "" };
   }
   function refreshFromRows(data) {
     transactions = (data.transactions || []).map(normalizeTransaction);
