@@ -228,6 +228,7 @@
     const wrapper=document.createElement("div");wrapper.className="message assistant";
     const card=document.createElement("div");card.className="review-card batch-review compact-review";
     const options=(arr,selected)=>arr.map(v=>'<option '+(v===selected?'selected':'')+' value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join("");
+    const paymentOptions=selected=>(selected&&selected!=="Other"?options(payments,selected):'<option value="" selected>Choose payment method</option>'+options(payments,""));
     const currencies=["AED","INR","USD","OMR","SGD","EUR","GBP"];
     const people=["TEST_USER_1","TEST_USER_2","TEST_USER_3"];
     const entries=drafts.map((draft,index)=>'<section class="batch-entry"><div class="batch-entry-head"><b>Transaction '+(index+1)+'</b><span>'+escapeHtml(draft.source||"DRAFT")+'</span></div>'+
@@ -238,12 +239,12 @@
       '<label>Currency<select id="b-currency-'+index+'">'+options(currencies,draft.currency)+'</select></label>'+
       '<label>Category<select id="b-category-'+index+'">'+options(categories,draft.category)+'</select></label>'+
       '<label>FX rate to AED<input id="b-rate-'+index+'" type="number" min="0.000001" step="any" value="'+draft.fxRateToBase+'"></label>'+
-      '<label>Payment<select id="b-payment-'+index+'">'+options(payments,draft.payment)+'</select></label>'+
+      '<label>Payment<select id="b-payment-'+index+'" required aria-required="true">'+paymentOptions(draft.payment)+'</select></label>'+
       '<label>Spent by<select id="b-spent-'+index+'">'+options(people,draft.spentBy)+'</select></label>'+
       '<label class="wide">Description<input id="b-description-'+index+'" maxlength="120" value="'+escapeHtml(draft.description)+'"></label>'+
       '<label class="wide">Notes<input id="b-notes-'+index+'" maxlength="500" value="" placeholder="Optional notes"></label>'+
       '</div><div class="base-preview" id="b-preview-'+index+'"></div></section>').join("");
-    const summaryRows=drafts.map((draft,index)=>'<div class="compact-batch-row"><div><b>'+(index+1)+'. '+escapeHtml(draft.description||"Transaction")+'</b><small>'+escapeHtml(draft.type+' · '+draft.category+' · '+dateLabel(draft.date))+'</small></div><strong>'+escapeHtml(currencyLabel(draft.currency,draft.amount))+'</strong></div>').join("");
+    const summaryRows=drafts.map((draft,index)=>'<div class="compact-batch-row"><div><b>'+(index+1)+'. '+escapeHtml(draft.description||"Transaction")+'</b><small>'+escapeHtml(draft.type+' · '+draft.category+' · '+dateLabel(draft.date))+'</small><small class="'+(draft.payment==="Other"?"payment-needed":"")+'">'+escapeHtml(draft.payment==="Other"?"Payment method required":draft.payment)+'</small></div><strong>'+escapeHtml(currencyLabel(draft.currency,draft.amount))+'</strong></div>').join("");
     card.innerHTML='<div class="review-head"><b>Review '+drafts.length+' entries</b><span>DRAFT · NOT SAVED</span></div>'+
       '<div class="compact-batch-summary">'+summaryRows+'</div>'+
       '<div class="review-actions compact-review-actions"><button class="confirm-btn" id="confirm-batch" type="button">Confirm all</button><button class="edit-cancel" id="edit-batch-entries" type="button">Edit entries</button><button class="edit-cancel" id="cancel-batch" type="button">Cancel</button></div>'+
@@ -266,9 +267,15 @@
       const records=[],now=new Date().toISOString();
       for(let i=0;i<drafts.length;i++){
         const amount=Number($("b-amount-"+i).value),currency=$("b-currency-"+i).value,rate=currency==="AED"?1:Number($("b-rate-"+i).value),description=$("b-description-"+i).value.trim(),date=$("b-date-"+i).value;
-        if(!amount||amount<=0||!date||!description||!rate||rate<=0){addMessage("Please check Transaction "+(i+1)+": amount, date, description and FX rate must all be valid. Nothing has been saved.");return;}
+        const payment=$("b-payment-"+i).value;
+        if(!payment){
+          batchEditFields.hidden=false;card.classList.add("is-editing");$("edit-batch-entries").textContent="Hide details";
+          addMessage("Please choose a payment method for Transaction "+(i+1)+" before saving. You can select Other / Not sure.");
+          $("b-payment-"+i).focus();return;
+        }
+        if(!amount||amount<=0||!date||!description||!rate||rate<=0){batchEditFields.hidden=false;card.classList.add("is-editing");$("edit-batch-entries").textContent="Hide details";addMessage("Please check Transaction "+(i+1)+": amount, date, description and FX rate must all be valid. Nothing has been saved.");return;}
         const spent=$("b-spent-"+i);
-        records.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+"-"+i,date,type:$("b-type-"+i).value,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,category:$("b-category-"+i).value,description,payment:$("b-payment-"+i).value,spentBy:spent.value,spentByLabel:spent.options[spent.selectedIndex].text,recordedBy:"TEST_USER_1",tripId:"",notes:$("b-notes-"+i).value.trim(),createdAt:now,updatedAt:now});
+        records.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+"-"+i,date,type:$("b-type-"+i).value,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,category:$("b-category-"+i).value,description,payment,spentBy:spent.value,spentByLabel:spent.options[spent.selectedIndex].text,recordedBy:"TEST_USER_1",tripId:"",notes:$("b-notes-"+i).value.trim(),createdAt:now,updatedAt:now});
       }
       const rows=readRecords();rows.push(...records);writeRecords(rows);lastSavedId=records[records.length-1].id;context.setLastTransaction(lastSavedId);
       card.innerHTML='<div class="review-head"><b>Batch saved to test ledger</b><span>CONFIRMED</span></div>'+records.map((r,i)=>'<div class="batch-saved-row"><b>'+(i+1)+'. '+escapeHtml(r.description)+'</b><span>'+escapeHtml(r.currency+" "+r.amount.toFixed(2)+" · AED "+r.baseAmount.toFixed(2))+'</span></div>').join("");
