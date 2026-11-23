@@ -10,19 +10,152 @@
   <title>Ganathe Finance | Smart Ledger</title>
 </head>
 <body>
-  <main class="shell">
+  <div class="app-shell">
     <header class="topbar">
-      <div class="brand-mark" aria-hidden="true">GL</div>
-      <div><p class="eyebrow">GANATHE FINANCE</p><h1>Smart Ledger</h1></div>
+      <a class="brand" href="./" aria-label="Smart Ledger home">
+        <span class="brand-mark">GL</span>
+        <span><span class="eyebrow">GANATHE FINANCE</span><strong>Smart Ledger</strong></span>
+      </a>
+      <div class="header-actions">
+        <span id="syncStatus" class="sync-pill" data-state="local"><span class="sync-dot"></span><span id="syncText">Local preview · not synced</span></span>
+        <button class="button button-outline button-small" id="connectButton" type="button">Connect OneDrive</button>
+      </div>
     </header>
-    <section class="welcome">
-      <p class="eyebrow">FOUNDATION BUILD</p>
-      <h2>Your family finances, thoughtfully organised.</h2>
-      <p>The foundation is in place. Transactions, trips, budgets and reports will appear here as each module is built.</p>
-      <span class="status"><span class="status-dot"></span> Setup in progress</span>
-    </section>
-    <footer>Private family finance workspace · Version 0.1 foundation · <a href="./privacy-policy.html">Privacy</a></footer>
-  </main>
-  <script src="./assets/js/app.js" defer></script>
+
+    <main>
+      <section class="welcome-row">
+        <div>
+          <p class="eyebrow">YOUR FAMILY FINANCES</p>
+          <h1>Money, made <span>clear.</span></h1>
+          <p class="welcome-copy">Record a transaction, ask a question or jump straight into a report.</p>
+        </div>
+        <div class="date-chip" id="todayLabel"></div>
+      </section>
+
+      <section class="stats-grid" aria-label="Financial overview">
+        <article class="stat-card">
+          <div class="stat-top"><span>Expenses this month</span><span class="stat-icon">↘</span></div>
+          <strong id="monthSpend">AED 0.00</strong>
+          <small id="monthSpendHint">No transactions yet</small>
+        </article>
+        <article class="stat-card">
+          <div class="stat-top"><span>Income this month</span><span class="stat-icon">↗</span></div>
+          <strong id="monthIncome">AED 0.00</strong>
+          <small>Recorded income</small>
+        </article>
+        <article class="stat-card">
+          <div class="stat-top"><span>Active trips</span><span class="stat-icon">✈</span></div>
+          <strong id="activeTrips">0</strong>
+          <small>Trips in progress</small>
+        </article>
+      </section>
+
+      <section class="workspace-grid">
+        <div class="main-column">
+          <section class="panel conversation-panel">
+            <div class="panel-heading">
+              <div><p class="eyebrow">SMART ASSISTANT</p><h2>What would you like to do?</h2></div>
+              <span class="engine-label">Built-in commands</span>
+            </div>
+            <div class="chat-stream" id="chatStream" aria-live="polite">
+              <div class="chat-message assistant">
+                <span class="avatar">GL</span>
+                <div class="message-body"><p>Hello! Try something like:</p><p class="example-phrase">“Spent AED 48 at Carrefour for groceries”</p><p>Or use one of the shortcuts below. You can always use the forms if I don't understand.</p></div>
+              </div>
+            </div>
+            <div class="suggestion-row">
+              <button class="suggestion" data-prompt="Show my spending this month" type="button">This month</button>
+              <button class="suggestion" data-prompt="Show today's expenses" type="button">Today’s expenses</button>
+              <button class="suggestion" data-prompt="Show trip expenses" type="button">Trip summary</button>
+            </div>
+            <form id="chatForm" class="chat-entry">
+              <label class="sr-only" for="chatInput">Type a message</label>
+              <input id="chatInput" autocomplete="off" placeholder="Tell me what you spent, or ask a question…" maxlength="500">
+              <button class="send-button" aria-label="Send message" type="submit">➤</button>
+            </form>
+            <p class="micro-note">Entries are always shown for review before saving. AI is not required for core actions.</p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">ACT QUICKLY</p><h2>Shortcuts</h2></div></div>
+            <div class="quick-actions">
+              <button class="quick-action" data-action="expense" type="button"><span class="quick-icon teal">＋</span><span><strong>Add expense</strong><small>Record a payment</small></span></button>
+              <button class="quick-action" data-action="income" type="button"><span class="quick-icon blue">↗</span><span><strong>Add income</strong><small>Record money received</small></span></button>
+              <button class="quick-action" data-action="trip" type="button"><span class="quick-icon amber">✈</span><span><strong>Create a trip</strong><small>Track shared spending</small></span></button>
+              <button class="quick-action" data-action="reports" type="button"><span class="quick-icon violet">▥</span><span><strong>View reports</strong><small>Explore your spending</small></span></button>
+            </div>
+          </section>
+
+          <section class="panel" id="reportsPanel">
+            <div class="panel-heading"><div><p class="eyebrow">YOUR NUMBERS</p><h2>Reports</h2></div></div>
+            <div class="report-actions">
+              <button class="report-button" data-report="today" type="button"><strong>Today</strong><small>Daily activity</small></button>
+              <button class="report-button" data-report="week" type="button"><strong>This week</strong><small>Weekly spending</small></button>
+              <button class="report-button" data-report="month" type="button"><strong>This month</strong><small>Monthly overview</small></button>
+              <button class="report-button" data-report="trip" type="button"><strong>Trip report</strong><small>Shared expenses</small></button>
+            </div>
+            <div id="reportResult" class="report-result" hidden></div>
+          </section>
+        </div>
+
+        <aside class="side-column">
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">LATEST ACTIVITY</p><h2>Transactions</h2></div><button class="text-button" id="addExpenseLink" type="button">＋ Add</button></div>
+            <div id="transactionList" class="transaction-list"><div class="empty-state">No transactions yet. Add your first expense to get started.</div></div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">ON THE GO</p><h2>Your trips</h2></div><button class="text-button" id="addTripLink" type="button">＋ New</button></div>
+            <div id="tripList" class="trip-list"><div class="empty-state">Your trips will appear here.</div></div>
+          </section>
+          <section class="connection-card">
+            <div class="connection-icon">☁</div>
+            <div><strong>Your data, your OneDrive</strong><p>Connect your Microsoft account to use one shared Excel workbook.</p></div>
+            <button id="connectCardButton" class="button button-dark button-small" type="button">Connect</button>
+          </section>
+        </aside>
+      </section>
+    </main>
+    <footer>Ganathe Finance · Smart Ledger <span>·</span> <a href="./privacy-policy.html">Privacy</a></footer>
+  </div>
+
+  <dialog id="transactionDialog" class="app-dialog">
+    <form id="transactionForm" method="dialog">
+      <div class="dialog-heading"><div><p class="eyebrow">TRANSACTION</p><h2 id="transactionDialogTitle">Add expense</h2></div><button class="icon-button" type="button" data-close="transactionDialog" aria-label="Close">×</button></div>
+      <div class="form-grid">
+        <label>Type<select id="txType" name="type"><option>Expense</option><option>Income</option></select></label>
+        <label>Date<input id="txDate" name="date" type="date" required></label>
+        <label class="span-2">Description<input id="txDescription" name="description" placeholder="e.g. Carrefour groceries" required maxlength="120"></label>
+        <label>Amount<input id="txAmount" name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></label>
+        <label>Currency<select id="txCurrency" name="currency"><option>AED</option><option>INR</option><option>OMR</option><option>USD</option><option>SGD</option><option>EUR</option><option>GBP</option></select></label>
+        <label>Category<select id="txCategory" name="category"></select></label>
+        <label>Payment type<select id="txPayment" name="paymentType"><option>Cash</option><option>Debit Card</option><option>Credit Card</option><option>Bank Transfer</option><option>Digital Wallet</option><option>Other</option></select></label>
+        <label>Paid by<input id="txPaidBy" name="paidBy" value="Me" maxlength="60" required></label>
+        <label>Trip (optional)<select id="txTrip" name="tripId"><option value="">Personal / non-trip</option></select></label>
+        <label class="span-2">Notes<input id="txNotes" name="notes" maxlength="200" placeholder="Optional"></label>
+      </div>
+      <div class="dialog-actions"><button class="button button-outline" type="button" data-close="transactionDialog">Cancel</button><button class="button button-primary" type="submit">Save transaction</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="tripDialog" class="app-dialog">
+    <form id="tripForm" method="dialog">
+      <div class="dialog-heading"><div><p class="eyebrow">TRIP PLANNER</p><h2>Create a trip</h2></div><button class="icon-button" type="button" data-close="tripDialog" aria-label="Close">×</button></div>
+      <div class="form-grid">
+        <label class="span-2">Trip name<input id="tripName" name="name" required maxlength="100" placeholder="e.g. Oman family trip"></label>
+        <label class="span-2">Destination<input id="tripDestination" name="destination" maxlength="100" placeholder="e.g. Muscat and Chennai"></label>
+        <label>Start date<input id="tripStart" name="startDate" type="date"></label>
+        <label>End date<input id="tripEnd" name="endDate" type="date"></label>
+        <label class="span-2">Participants<input id="tripMembers" name="members" placeholder="Names separated by commas"></label>
+      </div>
+      <div class="dialog-actions"><button class="button button-outline" type="button" data-close="tripDialog">Cancel</button><button class="button button-primary" type="submit">Create trip</button></div>
+    </form>
+  </dialog>
+
+  <script defer src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+  <script defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script defer src="./assets/js/config.js"></script>
+  <script defer src="./assets/js/ledger-core.js"></script>
+  <script defer src="./assets/js/onedrive-repository.js"></script>
+  <script defer src="./assets/js/app.js"></script>
 </body>
 </html>
