@@ -165,13 +165,16 @@
       $("review-description-label").textContent=value.description||"Description needed";
       $("review-date-label").textContent=dateLabel(value.date);
       $("review-category-label").textContent=value.category;
-      $("review-payment-label").textContent=paymentLabel(value.payment);
+      const paymentSummary=$("review-payment-label");if(paymentSummary)paymentSummary.textContent=paymentLabel(value.payment);
       $("r-rate-field").hidden=value.currency==="AED";
       $("base-preview").textContent=value.currency==="AED"?"Base amount: AED "+value.baseAmount.toFixed(2):"Estimated base amount: AED "+value.baseAmount.toFixed(2)+" · Verify the exchange rate before saving.";
       return value;
     };
-    const updateEditPreview=()=>syncSummary();
     const quickPayment=$("quick-payment");
+    const updateEditPreview=event=>{
+      if(event&&event.target&&event.target.id==="r-payment"&&quickPayment)quickPayment.value=event.target.value==="Other"?"":event.target.value;
+      syncSummary();
+    };
     if(quickPayment)quickPayment.addEventListener("change",()=>{$("r-payment").value=quickPayment.value||"Other";syncSummary();});
     ["r-type","r-date","r-amount","r-currency","r-category","r-payment","r-description","r-spent","r-notes","r-rate"].forEach(id=>{
       $(id).addEventListener("input",updateEditPreview);
