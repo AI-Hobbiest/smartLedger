@@ -74,3 +74,16 @@ test("numeric dates are interpreted as one day, not an entire month", () => {
   assert.equal(period.from, "2026-11-10");
   assert.equal(period.to, "2026-11-10");
 });
+
+
+test("Add an expense is a transaction request, not a report query", () => {
+  const context = engineApi.create({ now: fixedNow });
+  const result = context.route("Add an expense");
+  assert.equal(result.intent, "transaction");
+});
+
+test("money paid to me by a family member is an incoming transaction", () => {
+  const context = engineApi.create({ now: fixedNow });
+  const result = context.route("My brother paid me some money");
+  assert.equal(result.intent, "transaction");
+});
