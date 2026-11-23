@@ -53,3 +53,7 @@
 .form-help{margin:12px 0 0;color:#8392a0;font-size:10px}
 @media(max-width:900px){.workspace-grid{grid-template-columns:1fr}.side-column{grid-template-columns:1fr 1fr}.side-column>.panel:first-child{grid-column:span 2}}
 @media(max-width:640px){.app-shell{width:calc(100% - 20px)}.topbar{height:auto;min-height:68px;padding:10px 0;align-items:flex-start;gap:10px}.header-actions{max-width:64%}.header-actions .button{font-size:9px;padding:7px 8px}.development-banner{align-items:flex-start;flex-direction:column;gap:2px}.welcome-row{gap:8px}.stats-grid{grid-template-columns:1fr 1fr}.stat-card strong{font-size:16px}.side-column{grid-template-columns:1fr}.side-column>.panel:first-child{grid-column:auto}.filter-grid{grid-template-columns:1fr 1fr}.custom-report{align-items:stretch}.custom-report label{flex:1}.custom-report .button{align-self:end}.report-summary-grid{grid-template-columns:1fr 1fr}}
+
+
+/* Chat-first transaction controls */
+.conversation-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.conversation-tools .text-button{white-space:nowrap}
