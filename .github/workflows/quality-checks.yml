@@ -2,12 +2,12 @@ name: Smart Ledger quality checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, foundation-v2]
   pull_request:
     branches: [main]
 
 jobs:
-  conversation-engine:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -22,6 +22,10 @@ jobs:
           node --check assets/js/intent-adapter.js
           node --check assets/js/conversation-test.js
           node --check assets/js/provider-bridge.js
+          node --check assets/js/ledger-core.js
+          node --check assets/js/onedrive-repository.js
+          node --check assets/js/config.js
+          node --check assets/js/app.js
           node --check cloudflare/worker/src/index.mjs
-      - name: Run finance conversation scenarios
-        run: node --test tests/context-engine.test.cjs tests/intent-adapter.test.cjs tests/worker-bridge.test.mjs
+      - name: Run finance regression tests
+        run: node --test tests/context-engine.test.cjs tests/intent-adapter.test.cjs tests/worker-bridge.test.mjs tests/ledger-core.test.cjs
