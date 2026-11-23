@@ -3,7 +3,7 @@
   const $ = id => document.getElementById(id);
   const categories = ["Food/EatOut","Grocery","Apparel","Devotional","Travel","Misc/Others","Spiritual","Investments","Salary","Other Income","Refund"];
   const payments = ["Cash","Debit Card","Credit Card","Bank Transfer","Digital Wallet","Other"];
-  let pending = null, pendingCard = null, lastReportQuery = null, lastSavedId = null;
+  let pending = null, pendingCard = null, pendingConversation = null, lastReportQuery = null, lastSavedId = null;
   const context = window.SmartLedgerContext.create();
   const localISO = d => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0"); return y+"-"+m+"-"+day; };
   const todayISO = () => localISO(new Date());
@@ -240,6 +240,54 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     if(lastReportQuery && /\b(and by category|category breakdown|break it down by category)\b/.test(lower)){answerReport(lastReportQuery+" by category");return true;}
     return false;
   };
+  const showPendingQuestion = transaction => {
+    if(!transaction.amount){
+      pendingConversation.stage="amount";
+      if(transaction.receivedFrom)addMessage("How much did "+transaction.receivedFrom.toLowerCase()+" pay you? Include the currency if it wasn't AED.");
+      else if(transaction.description && transaction.description!=="Transaction")addMessage("How much did you spend on "+transaction.description+"? Include currency if it wasn't AED.");
+      else addMessage("How much was the "+transaction.type.toLowerCase()+"? Include the currency if it wasn't AED.");
+      return;
+    }
+    if(transaction.needsPurpose){pendingConversation.stage="purpose";addMessage("What was this payment from "+transaction.receivedFrom.toLowerCase()+" for — a repayment, gift, loan, or something else?");return;}
+    if(transaction.needsDescription || transaction.description==="Transaction"){pendingConversation.stage="description";addMessage(transaction.type==="Income"?"What was this income from?":"What was the expense for?");return;}
+    pendingConversation=null;
+    addMessage("Here’s what I understood. Please review it before saving.");
+    renderReview(transaction);
+  };
+  const continuePendingConversation = reply => {
+    if(!pendingConversation)return false;
+    const text=String(reply||"").trim(),tx=pendingConversation.transaction;
+    if(/^(cancel|stop|never mind|nevermind|forget it)$/i.test(text)){
+      pendingConversation=null;addMessage("Okay, cancelled. Nothing was saved.");return true;
+    }
+    if(pendingConversation.stage==="amount"){
+      const amount=window.SmartLedgerIntentAdapter.parseAmount(text);
+      if(!amount){addMessage("I still need the amount. You can enter it like “AED 120” or “120”.");return true;}
+      tx.amount=amount.amount;tx.currency=amount.currency||tx.currency||"AED";
+      const rate={AED:1,INR:0.044,USD:3.6725,OMR:9.55,SGD:2.75,EUR:3.95,GBP:4.65}[tx.currency]||1;
+      tx.fxRateToBase=rate;tx.baseAmount=tx.amount*rate;
+      const pay=/credit card|\bcc\b/i.test(text)?"Credit Card":/debit card|\bdc\b/i.test(text)?"Debit Card":/bank transfer|transferred/i.test(text)?"Bank Transfer":/cash/i.test(text)?"Cash":/wallet|apple pay|google pay/i.test(text)?"Digital Wallet":null;
+      if(pay)tx.payment=pay;
+      if(/\b(today|yesterday|tomorrow|day before yesterday)\b/i.test(text))tx.date=parseDate(text);
+      const purpose=window.SmartLedgerIntentAdapter.inferIncomePurpose(text);
+      if(purpose){tx.purpose=purpose;tx.notes=(tx.receivedFrom?"Received from: "+tx.receivedFrom+" · ":"")+"Purpose: "+purpose;tx.needsPurpose=false;}
+      showPendingQuestion(tx);return true;
+    }
+    if(pendingConversation.stage==="purpose"){
+      const purpose=window.SmartLedgerIntentAdapter.inferIncomePurpose(text);
+      tx.purpose=purpose||"Other";
+      tx.notes=(tx.receivedFrom?"Received from: "+tx.receivedFrom+" · ":"")+"Purpose: "+tx.purpose+(purpose?"":" ("+text+")");
+      if(purpose==="Refund")tx.category="Refund";else if(purpose==="Salary")tx.category="Salary";else tx.category="Other Income";
+      tx.needsPurpose=false;showPendingQuestion(tx);return true;
+    }
+    if(pendingConversation.stage==="description"){
+      if(!text){addMessage("Please describe what this transaction was for.");return true;}
+      tx.description=text.charAt(0).toUpperCase()+text.slice(1);
+      tx.category=window.SmartLedgerContext.extractFilters(text).category||inferCategory(text,tx.type,tx.description);
+      tx.needsDescription=false;showPendingQuestion(tx);return true;
+    }
+    addMessage("Please answer the question above, or say “cancel” to stop.");return true;
+  };
   const handleGreeting = text => {
     const t=text.trim().toLowerCase();
     if(/^(hi|hello|hey|hiya|good morning|good afternoon|good evening)[!.\s]*$/.test(t)){
@@ -259,6 +307,7 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
   $("chat-form").addEventListener("submit",async e=>{
     e.preventDefault();const text=$("prompt").value.trim();if(!text)return;
     addMessage(text,"user");$("prompt").value="";
+    if(pendingConversation){continuePendingConversation(text);return;}
     const route=context.route(text);
     if(route.intent==="greeting"){handleGreeting(text);return;}
     if(route.intent==="correction" && handleFollowUp(text))return;
@@ -277,7 +326,15 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     if(handleFollowUp(text))return;
     lastReportQuery=null;
     const interpreted=await intentAdapter.interpret(text,context.snapshot());
-    if(interpreted.intent==="clarification"){addMessage(interpreted.question);return;}
+    if(interpreted.intent==="clarification"){
+      if(interpreted.pendingTransaction)pendingConversation={transaction:{...interpreted.pendingTransaction},stage:""};
+      addMessage(interpreted.question);
+      if(pendingConversation){
+        const tx=pendingConversation.transaction;
+        pendingConversation.stage=!tx.amount?"amount":tx.needsPurpose?"purpose":"description";
+      }
+      return;
+    }
     if(interpreted.intent==="provider.error"){addMessage(interpreted.message);return;}
     if(interpreted.intent==="greeting"){addMessage(interpreted.reply||"Hello! How can I help with your finances?");return;}
     if(interpreted.intent==="unknown"){addMessage(interpreted.reply||"I can help with personal finance: recording expenses or income, correcting entries, and understanding your spending. What would you like to do?");return;}
@@ -299,7 +356,7 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     renderReview(draft);
   });
   document.querySelectorAll(".suggestion").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("chat-form").requestSubmit();}));
-  $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;pendingCard=null;lastReportQuery=null;lastSavedId=null;context.clear();window.SmartLedgerConversationHistory=[];});
+  $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;pendingCard=null;pendingConversation=null;lastReportQuery=null;lastSavedId=null;context.clear();window.SmartLedgerConversationHistory=[];});
   $("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("chat-form").requestSubmit();}});
   updateCount();
 })();
