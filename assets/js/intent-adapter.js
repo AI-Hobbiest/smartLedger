@@ -147,7 +147,7 @@
   const clarificationQuestion = transaction => {
     if(!transaction.amount){
       if(transaction.receivedFrom)return "How much did "+transaction.receivedFrom.toLowerCase()+" pay you? Include the currency if it wasn't AED.";
-      if(transaction.description!=="Transaction")return "How much did you spend on "+transaction.description+"? Include currency if it wasn't AED.";
+      if(transaction.description!=="Transaction")return "How much did you spend on "+transaction.description+"? Please include the amount and currency if it wasn't AED.";
       return "How much was the "+transaction.type.toLowerCase()+"? Include the currency if it wasn't AED.";
     }
     if(transaction.needsPurpose)return "What was this payment from "+transaction.receivedFrom.toLowerCase()+" for — a repayment, gift, loan, or something else?";
