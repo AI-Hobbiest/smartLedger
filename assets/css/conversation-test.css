@@ -57,3 +57,7 @@
 .compact-payment-field label small{font-size:9px;color:var(--muted);font-weight:500}
 .compact-payment-field select{max-width:170px;min-width:0;padding:7px 25px 7px 8px;border:1px solid #dce5ec;border-radius:8px;background:#fff;color:var(--ink);font:11px Aptos,"Segoe UI",Arial,sans-serif}
 @media(max-width:460px){.compact-payment-field{gap:7px}.compact-payment-field select{max-width:150px}}
+
+.payment-needed{color:var(--red)!important;font-weight:800}
+.compact-payment-field label small{color:var(--red);font-weight:800}
+.compact-payment-field select:invalid{border-color:#d28c87;background:#fffafa}
