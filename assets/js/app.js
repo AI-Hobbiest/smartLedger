@@ -194,8 +194,6 @@
       const profile = await candidate.signIn();
       const data = await candidate.ensureWorkbook();
       oneDrive = candidate;
-      window.smartLedgerWorkbookReference = () => oneDrive ? oneDrive.getSharedWorkbookReference() : null;
-      console.info("Smart Ledger shared workbook reference:", window.smartLedgerWorkbookReference());
       refreshFromRows(data);
       setStatus("connected", "OneDrive · " + (profile.name || "connected"));
       addChat("Connected to OneDrive. Your workbook is ready.", "assistant");
