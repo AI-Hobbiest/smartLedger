@@ -83,13 +83,19 @@
     if (!data.trips.length) host.innerHTML = '<div class="empty-state">No trips yet. Create one to group travel spending.</div>';
     else host.innerHTML = data.trips.slice().sort((a,b) => String(b.startDate || "").localeCompare(String(a.startDate || ""))).map(trip => {
       const linked = data.transactions.filter(row => row.tripId === trip.id && row.type === "Expense");
-      return '<article class="trip-item"><div><strong>' + safe(trip.name) + '</strong><small>' + safe(trip.destination || "Destination not set") + (trip.startDate ? " · " + safe(trip.startDate) : "") + '</small><small>' + linked.length + ' expense entries · ' + safe(formatTotals(totals(linked))) + '</small></div><div class="trip-actions"><span class="trip-badge">' + safe(trip.status || "Planned") + '</span><button type="button" data-edit-trip="' + safe(trip.id) + '">Edit</button><button type="button" data-trip-report="' + safe(trip.id) + '">Report</button></div></article>';
+      return '<article class="trip-item"><div><strong>' + safe(trip.name) + '</strong><small>' + safe(trip.destination || "Destination not set") + (trip.startDate ? " · " + safe(trip.startDate) : "") + '</small><small>' + linked.length + ' expense entries · ' + safe(formatTotals(totals(linked))) + '</small></div><div class="trip-actions"><span class="trip-badge">' + safe(trip.status || "Planned") + '</span><button type="button" data-edit-trip="' + safe(trip.id) + '">Edit</button><button type="button" data-trip-report="' + safe(trip.id) + '">Report</button><button type="button" data-delete-trip="' + safe(trip.id) + '">Delete</button></div></article>';
     }).join("");
     host.querySelectorAll("[data-edit-trip]").forEach(button => button.addEventListener("click", () => {
       const trip = data.trips.find(item => item.id === button.dataset.editTrip);
       if (trip) openTripForm(trip);
     }));
     host.querySelectorAll("[data-trip-report]").forEach(button => button.addEventListener("click", () => runReport("trip", button.dataset.tripReport)));
+    host.querySelectorAll("[data-delete-trip]").forEach(button => button.addEventListener("click", async () => {
+      const trip = data.trips.find(item => item.id === button.dataset.deleteTrip);
+      if (!trip || !confirm("Delete trip '" + trip.name + "'? Linked transactions will remain but become personal entries.")) return;
+      try { await repository.deleteTrip(trip.id); await loadData(); }
+      catch (error) { showError(error); }
+    }));
   }
 
   function currentMonthBudgetSpent(budget) {
@@ -118,9 +124,10 @@
   }
 
   function populateSelects() {
-    const categories = core.CATEGORIES.map(value => '<option value="' + safe(value) + '">' + safe(value) + '</option>').join("");
-    $("txCategory").innerHTML = categories;
-    $("budgetCategory").innerHTML = categories;
+    const expenseOptions = core.CATEGORIES.map(value => '<option value="' + safe(value) + '">' + safe(value) + '</option>').join("");
+    $("txCategory").innerHTML = ($("txType").value === "Income" ? core.INCOME_CATEGORIES : core.CATEGORIES)
+      .map(value => '<option value="' + safe(value) + '">' + safe(value) + '</option>').join("");
+    $("budgetCategory").innerHTML = expenseOptions;
     $("transactionCategoryFilter").innerHTML = '<option value="">All categories</option>' + categories;
     const tripOptions = data.trips.map(trip => '<option value="' + safe(trip.id) + '">' + safe(trip.name) + '</option>').join("");
     const currentTxTrip = $("txTrip").value, currentFilterTrip = $("transactionTripFilter").value;
@@ -177,7 +184,9 @@
     $("txDescription").value = row && row.description || "";
     $("txAmount").value = row && row.amount || "";
     $("txCurrency").value = row && row.currency || "AED";
-    $("txCategory").value = row && row.category || "Misc / Others";
+    const categoryOptions = $("txType").value === "Income" ? core.INCOME_CATEGORIES : core.CATEGORIES;
+    $("txCategory").innerHTML = categoryOptions.map(value => '<option value="' + safe(value) + '">' + safe(value) + '</option>').join("");
+    $("txCategory").value = row && row.category || (categoryOptions[0] || "Misc / Others");
     $("txPayment").value = row && row.paymentType || "Other";
     $("txPaidBy").value = row && row.paidBy || "Me";
     $("txTrip").value = row && row.tripId || "";
