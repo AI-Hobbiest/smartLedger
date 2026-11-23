@@ -121,7 +121,7 @@
     if(draft.type==="Income"){
       return "Got it — I’ve prepared an income entry for "+amount+(draft.description&&draft.description!=="Transaction"?" ("+draft.description+")":"")+". Please check the summary below and confirm when you’re ready.";
     }
-    return "Got it — I’ve prepared an expense for "+amount+" on "+description+". "+(paymentLabel(draft.payment)==="Payment not specified"?"I haven’t got the payment method yet; you can add it under Edit details. ":"")+"Please check the summary below and confirm when you’re ready.";
+    return "Got it — I’ve prepared an expense for "+amount+" on "+description+". "+(paymentLabel(draft.payment)==="Payment not specified"?"I haven’t got the payment method yet — was that cash, card, or another method? You can just reply here. ":"")+"Please check the summary below and confirm when you’re ready.";
   };
   const renderReview = draft => {
     pending=draft;context.setPending(draft);
