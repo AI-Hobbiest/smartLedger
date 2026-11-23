@@ -49,3 +49,11 @@
   .compact-review-actions button{padding:8px 8px;font-size:9px}
   .compact-batch-row{align-items:flex-start}
 }
+
+
+/* Contextual field shown only when the message omitted payment method */
+.compact-payment-field{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding:8px 10px;border:1px solid #e5ecef;border-radius:9px;background:#fff}
+.compact-payment-field label{display:flex;flex-direction:column;gap:1px;color:var(--ink);font-size:10px;font-weight:800}
+.compact-payment-field label small{font-size:9px;color:var(--muted);font-weight:500}
+.compact-payment-field select{max-width:170px;min-width:0;padding:7px 25px 7px 8px;border:1px solid #dce5ec;border-radius:8px;background:#fff;color:var(--ink);font:11px Aptos,"Segoe UI",Arial,sans-serif}
+@media(max-width:460px){.compact-payment-field{gap:7px}.compact-payment-field select{max-width:150px}}
