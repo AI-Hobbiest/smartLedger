@@ -104,41 +104,107 @@
     if(shown.length){lines.push("","Transactions"+(shown.length===8?" (latest 8)":"")+":");shown.forEach(r=>lines.push("• "+r.date+" · "+(r.description||r.category||"Transaction")+" · "+r.currency+" "+Number(r.amount||0).toFixed(2)+" ("+moneyAED(base(r))+")"));}
     addMessage(lines.join("\n"));
   };
+  const dateLabel = value => {
+    if(!value)return "Date not set";
+    if(value===todayISO())return "Today";
+    const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+    if(value===localISO(yesterday))return "Yesterday";
+    const parts=value.split("-").map(Number);
+    const parsed=new Date(parts[0],parts[1]-1,parts[2]);
+    return Number.isNaN(parsed.getTime())?value:parsed.toLocaleDateString(undefined,{day:"numeric",month:"short",year:parts[0]===new Date().getFullYear()?undefined:"numeric"});
+  };
+  const currencyLabel = (currency,amount) => String(currency||"AED")+" "+Number(amount||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const paymentLabel = value => value&&value!=="Other"?value:"Payment not specified";
+  const transactionAcknowledgement = draft => {
+    const amount=currencyLabel(draft.currency,draft.amount);
+    const description=(draft.description||"transaction").toLowerCase();
+    if(draft.type==="Income"){
+      return "Got it — I’ve prepared an income entry for "+amount+(draft.description&&draft.description!=="Transaction"?" ("+draft.description+")":"")+". Please check the summary below and confirm when you’re ready.";
+    }
+    return "Got it — I’ve prepared an expense for "+amount+" on "+description+". "+(paymentLabel(draft.payment)==="Payment not specified"?"I haven’t got the payment method yet; you can add it under Edit details. ":"")+"Please check the summary below and confirm when you’re ready.";
+  };
   const renderReview = draft => {
     pending=draft;context.setPending(draft);
     const wrapper=document.createElement("div");wrapper.className="message assistant";
-    const card=document.createElement("div");card.className="review-card";
+    const card=document.createElement("div");card.className="review-card compact-review";
     const options=(arr,selected)=>arr.map(v=>'<option '+(v===selected?'selected':'')+' value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join("");
-    card.innerHTML='<div class="review-head"><b>Review transaction</b><span>DRAFT · NOT SAVED</span></div>'+
-      '<div class="review-grid">'+
-      '<label>Type<select id="r-type">'+options(["Expense","Income"],draft.type)+'</select></label>'+
-      '<label>Date<input id="r-date" type="date" value="'+escapeHtml(draft.date)+'"></label>'+
-      '<label>Amount<input id="r-amount" type="number" min="0.01" step="0.01" value="'+draft.amount+'"></label>'+
-      '<label>Currency<select id="r-currency">'+options(["AED","INR","USD","OMR","SGD","EUR","GBP"],draft.currency)+'</select></label>'+
-      '<label>Category<select id="r-category">'+options(categories,draft.category)+'</select></label>'+
-      '<label>FX rate to AED<input id="r-rate" type="number" min="0.000001" step="any" value="'+draft.fxRateToBase+'"></label>'+
-      '<label>Payment<select id="r-payment">'+options(payments,draft.payment)+'</select></label>'+
-      '<label class="wide">Description<input id="r-description" maxlength="120" value="'+escapeHtml(draft.description)+'"></label>'+
-      '<label class="wide">Spent by<select id="r-spent">'+options(["TEST_USER_1","TEST_USER_2","TEST_USER_3"],draft.spentBy)+'</select></label>'+
-      '<label class="wide">Notes<input id="r-notes" maxlength="500" value="'+escapeHtml(draft.notes)+'" placeholder="Optional notes"></label>'+
-      '</div><div id="base-preview" class="base-preview"></div>'+
-      '<div class="review-actions"><button class="confirm-btn" id="confirm-entry" type="button">Confirm & save</button><button class="edit-cancel" id="cancel-entry" type="button">Cancel</button></div>';
+    card.innerHTML=
+      '<div class="review-head"><b>Review entry</b><span>DRAFT · NOT SAVED</span></div>'+
+      '<div class="compact-review-summary">'+
+        '<div class="compact-review-top"><span class="review-kind" id="review-type-label">'+escapeHtml(draft.type.toUpperCase())+'</span><strong id="review-amount-label">'+escapeHtml(currencyLabel(draft.currency,draft.amount))+'</strong></div>'+
+        '<div class="review-description" id="review-description-label">'+escapeHtml(draft.description||"Transaction")+'</div>'+
+        '<div class="review-meta"><span id="review-date-label">'+escapeHtml(dateLabel(draft.date))+'</span><span id="review-category-label">'+escapeHtml(draft.category||"Uncategorised")+'</span><span id="review-payment-label">'+escapeHtml(paymentLabel(draft.payment))+'</span></div>'+
+      '</div>'+
+      '<div class="review-actions compact-review-actions"><button class="confirm-btn" id="confirm-entry" type="button">Confirm</button><button class="edit-cancel" id="edit-entry" type="button">Edit details</button><button class="edit-cancel" id="cancel-entry" type="button">Cancel</button></div>'+
+      '<div class="review-edit-fields" id="review-edit-fields" hidden>'+
+        '<div class="review-grid">'+
+          '<label>Type<select id="r-type">'+options(["Expense","Income"],draft.type)+'</select></label>'+
+          '<label>Date<input id="r-date" type="date" value="'+escapeHtml(draft.date)+'"></label>'+
+          '<label>Amount<input id="r-amount" type="number" min="0.01" step="0.01" value="'+draft.amount+'"></label>'+
+          '<label>Currency<select id="r-currency">'+options(["AED","INR","USD","OMR","SGD","EUR","GBP"],draft.currency)+'</select></label>'+
+          '<label>Category<select id="r-category">'+options(categories,draft.category)+'</select></label>'+
+          '<label class="wide fx-field" id="r-rate-field"'+(draft.currency==="AED"?" hidden":"")+'>FX rate to AED<input id="r-rate" type="number" min="0.000001" step="any" value="'+draft.fxRateToBase+'"></label>'+
+          '<label>Payment<select id="r-payment">'+options(payments,draft.payment)+'</select></label>'+
+          '<label class="wide">Description<input id="r-description" maxlength="120" value="'+escapeHtml(draft.description)+'"></label>'+
+          '<label class="wide">Spent by<select id="r-spent">'+options(["TEST_USER_1","TEST_USER_2","TEST_USER_3"],draft.spentBy)+'</select></label>'+
+          '<label class="wide">Notes<input id="r-notes" maxlength="500" value="'+escapeHtml(draft.notes)+'" placeholder="Optional notes"></label>'+
+        '</div><div id="base-preview" class="base-preview"></div>'+
+      '</div>';
     wrapper.append(card);$("chat").append(wrapper);pendingCard=card;$("chat").scrollTop=$("chat").scrollHeight;
-    const updatePreview=()=>{const curr=$("r-currency").value,amt=Number($("r-amount").value||0),rate=curr==="AED"?1:Number($("r-rate").value||0);$("base-preview").textContent="Estimated base amount: AED "+(amt*rate).toFixed(2)+(curr!=="AED"?" · FX rate is an editable estimate; verify before saving.":"");};
-    ["r-currency","r-amount","r-rate"].forEach(id=>$(id).addEventListener("input",updatePreview));$("r-currency").addEventListener("change",()=>{const rates={AED:1,INR:0.044,USD:3.6725,OMR:9.55,SGD:2.75,EUR:3.95,GBP:4.65};$("r-rate").value=rates[$("r-currency").value];updatePreview();});updatePreview();
-    $("confirm-entry").addEventListener("click",()=>{
-      const amount=Number($("r-amount").value),currency=$("r-currency").value,rate=currency==="AED"?1:Number($("r-rate").value);
-      if(!amount||amount<=0||!$("r-date").value||!$("r-description").value.trim()||!rate||rate<=0){addMessage("Please check the amount, date, description and FX rate before saving.");return;}
-      const rows=readRecords(),now=new Date().toISOString(),spent=$("r-spent");
-      const rec={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),date:$("r-date").value,type:$("r-type").value,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,category:$("r-category").value,description:$("r-description").value.trim(),payment:$("r-payment").value,spentBy:spent.value,spentByLabel:spent.options[spent.selectedIndex].text,recordedBy:"TEST_USER_1",tripId:"",notes:$("r-notes").value.trim(),createdAt:now,updatedAt:now};
-      rows.push(rec);writeRecords(rows);lastSavedId=rec.id;context.setLastTransaction(rec.id);card.innerHTML='<div class="review-head"><b>Saved to test ledger</b><span>CONFIRMED</span></div><div class="base-preview">'+escapeHtml(rec.type+" · "+rec.currency+" "+rec.amount.toFixed(2)+" · "+rec.description)+"<br>Base amount: AED "+rec.baseAmount.toFixed(2)+'</div>';pending=null;pendingCard=null;context.setPending(null);updateCount();addMessage("Done. I've added this transaction to your local test ledger. It is not synced to OneDrive.");$("chat").scrollTop=$("chat").scrollHeight;
+    const editFields=$("review-edit-fields");
+    const readDraft=()=>{
+      const currency=$("r-currency").value,amount=Number($("r-amount").value||0),rate=currency==="AED"?1:Number($("r-rate").value||0);
+      return {type:$("r-type").value,date:$("r-date").value,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,category:$("r-category").value,payment:$("r-payment").value,description:$("r-description").value.trim(),spentBy:$("r-spent").value,spentByLabel:$("r-spent").options[$("r-spent").selectedIndex].text,notes:$("r-notes").value.trim()};
+    };
+    const syncSummary=()=>{
+      const value=readDraft();
+      $("review-type-label").textContent=value.type.toUpperCase();
+      $("review-amount-label").textContent=currencyLabel(value.currency,value.amount);
+      $("review-description-label").textContent=value.description||"Description needed";
+      $("review-date-label").textContent=dateLabel(value.date);
+      $("review-category-label").textContent=value.category;
+      $("review-payment-label").textContent=paymentLabel(value.payment);
+      $("r-rate-field").hidden=value.currency==="AED";
+      $("base-preview").textContent=value.currency==="AED"?"Base amount: AED "+value.baseAmount.toFixed(2):"Estimated base amount: AED "+value.baseAmount.toFixed(2)+" · Verify the exchange rate before saving.";
+      return value;
+    };
+    const updateEditPreview=()=>syncSummary();
+    ["r-type","r-date","r-amount","r-currency","r-category","r-payment","r-description","r-spent","r-notes","r-rate"].forEach(id=>{
+      $(id).addEventListener("input",updateEditPreview);
+      $(id).addEventListener("change",updateEditPreview);
     });
-    $("cancel-entry").addEventListener("click",()=>{card.innerHTML='<b>Draft cancelled.</b><p>You can describe the transaction again whenever you’re ready.</p>';pending=null;context.setPending(null);});
+    $("r-currency").addEventListener("change",()=>{
+      const rates={AED:1,INR:0.044,USD:3.6725,OMR:9.55,SGD:2.75,EUR:3.95,GBP:4.65};
+      $("r-rate").value=rates[$("r-currency").value];syncSummary();
+    });
+    $("edit-entry").addEventListener("click",()=>{
+      editFields.hidden=!editFields.hidden;
+      card.classList.toggle("is-editing",!editFields.hidden);
+      $("edit-entry").textContent=editFields.hidden?"Edit details":"Hide details";
+      if(!editFields.hidden)syncSummary();
+    });
+    $("confirm-entry").addEventListener("click",()=>{
+      const value=readDraft();
+      if(!value.amount||value.amount<=0||!value.date||!value.description||!value.fxRateToBase||value.fxRateToBase<=0){addMessage("Please check the amount, date, description and exchange rate before saving.");return;}
+      const rows=readRecords(),now=new Date().toISOString();
+      const rec={id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),date:value.date,type:value.type,amount:value.amount,currency:value.currency,fxRateToBase:value.fxRateToBase,baseAmount:value.baseAmount,category:value.category,description:value.description,payment:value.payment,spentBy:value.spentBy,spentByLabel:value.spentByLabel,recordedBy:"TEST_USER_1",tripId:"",notes:value.notes,createdAt:now,updatedAt:now};
+      rows.push(rec);writeRecords(rows);lastSavedId=rec.id;context.setLastTransaction(rec.id);
+      card.className="review-card compact-review saved-review";
+      card.innerHTML='<div class="review-head"><b>Saved to test ledger</b><span>CONFIRMED</span></div><div class="compact-review-summary"><div class="compact-review-top"><span class="review-kind">SAVED</span><strong>'+escapeHtml(currencyLabel(rec.currency,rec.amount))+'</strong></div><div class="review-description">'+escapeHtml(rec.description)+'</div><div class="review-meta"><span>'+escapeHtml(dateLabel(rec.date))+'</span><span>'+escapeHtml(rec.category)+'</span></div></div>';
+      pending=null;pendingCard=null;context.setPending(null);updateCount();
+      addMessage("All set — I’ve saved that entry to your local test ledger. It hasn’t synced to OneDrive.");
+      $("chat").scrollTop=$("chat").scrollHeight;
+    });
+    $("cancel-entry").addEventListener("click",()=>{
+      card.className="review-card compact-review";
+      card.innerHTML='<div class="review-head"><b>Draft cancelled</b><span>NOT SAVED</span></div><p class="compact-cancel-note">No changes were saved. You can describe the transaction again whenever you’re ready.</p>';
+      pending=null;pendingCard=null;context.setPending(null);
+    });
   };
   const renderBatchReview = drafts => {
     pending=drafts;context.setPending(drafts);
     const wrapper=document.createElement("div");wrapper.className="message assistant";
-    const card=document.createElement("div");card.className="review-card batch-review";
+    const card=document.createElement("div");card.className="review-card batch-review compact-review";
     const options=(arr,selected)=>arr.map(v=>'<option '+(v===selected?'selected':'')+' value="'+escapeHtml(v)+'">'+escapeHtml(v)+'</option>').join("");
     const currencies=["AED","INR","USD","OMR","SGD","EUR","GBP"];
     const people=["TEST_USER_1","TEST_USER_2","TEST_USER_3"];
@@ -155,11 +221,18 @@
       '<label class="wide">Description<input id="b-description-'+index+'" maxlength="120" value="'+escapeHtml(draft.description)+'"></label>'+
       '<label class="wide">Notes<input id="b-notes-'+index+'" maxlength="500" value="" placeholder="Optional notes"></label>'+
       '</div><div class="base-preview" id="b-preview-'+index+'"></div></section>').join("");
-    card.innerHTML='<div class="review-head"><b>Review '+drafts.length+' transactions</b><span>DRAFT · NOT SAVED</span></div>'+
-      '<p class="batch-intro">I found several transactions in your message. Review each one below; nothing is saved until you confirm the whole batch.</p>'+
-      entries+
-      '<div class="review-actions"><button class="confirm-btn" id="confirm-batch" type="button">Confirm & save all '+drafts.length+'</button><button class="edit-cancel" id="cancel-batch" type="button">Cancel all</button></div>';
+    const summaryRows=drafts.map((draft,index)=>'<div class="compact-batch-row"><div><b>'+(index+1)+'. '+escapeHtml(draft.description||"Transaction")+'</b><small>'+escapeHtml(draft.type+' · '+draft.category+' · '+dateLabel(draft.date))+'</small></div><strong>'+escapeHtml(currencyLabel(draft.currency,draft.amount))+'</strong></div>').join("");
+    card.innerHTML='<div class="review-head"><b>Review '+drafts.length+' entries</b><span>DRAFT · NOT SAVED</span></div>'+
+      '<div class="compact-batch-summary">'+summaryRows+'</div>'+
+      '<div class="review-actions compact-review-actions"><button class="confirm-btn" id="confirm-batch" type="button">Confirm all</button><button class="edit-cancel" id="edit-batch-entries" type="button">Edit entries</button><button class="edit-cancel" id="cancel-batch" type="button">Cancel</button></div>'+
+      '<div class="review-edit-fields batch-edit-fields" id="batch-edit-fields" hidden>'+entries+'</div>';
     wrapper.append(card);$("chat").append(wrapper);pendingCard=card;$("chat").scrollTop=$("chat").scrollHeight;
+    const batchEditFields=$("batch-edit-fields");
+    $("edit-batch-entries").addEventListener("click",()=>{
+      batchEditFields.hidden=!batchEditFields.hidden;
+      card.classList.toggle("is-editing",!batchEditFields.hidden);
+      $("edit-batch-entries").textContent=batchEditFields.hidden?"Edit entries":"Hide details";
+    });
     const rates={AED:1,INR:0.044,USD:3.6725,OMR:9.55,SGD:2.75,EUR:3.95,GBP:4.65};
     drafts.forEach((draft,index)=>{
       const update=()=>{const currency=$("b-currency-"+index).value,amount=Number($("b-amount-"+index).value||0),rate=currency==="AED"?1:Number($("b-rate-"+index).value||0);$("b-preview-"+index).textContent="Estimated base amount: AED "+(amount*rate).toFixed(2)+(currency!=="AED"?" · FX rate is an editable estimate; verify before saving.":"");};
@@ -342,17 +415,17 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     if(interpreted.intent==="help"){addMessage(interpreted.reply||"I can record expenses and income, review multiple transactions together, correct a draft, or answer questions about your saved spending. Describe what happened in your own words.");return;}
     if(interpreted.intent==="transaction.create"){
       if(interpreted.transactions.length>1){
-        addMessage(interpreted.reply||("I found "+interpreted.transactions.length+" transactions. Please review them together before saving."));
+        addMessage("I found "+interpreted.transactions.length+" entries in your message. I’ve prepared a short summary of each one below; nothing is saved until you confirm.");
         renderBatchReview(interpreted.transactions);
       } else {
-        addMessage(interpreted.reply||"Here’s what I understood. Please review and correct anything that needs changing before saving.");
+        addMessage(transactionAcknowledgement(interpreted.transactions[0]));
         renderReview(interpreted.transactions[0]);
       }
       return;
     }
     const draft=parse(text);
     if(draft.error){addMessage(draft.error);return;}
-    addMessage("Here’s what I understood. Please review and correct anything that needs changing before saving.");
+    addMessage(transactionAcknowledgement(draft));
     renderReview(draft);
   });
   document.querySelectorAll(".suggestion").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("chat-form").requestSubmit();}));
