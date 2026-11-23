@@ -5,3 +5,51 @@
 
 /* Transaction confirmation actions */
 .draft-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+
+
+/* Feature MVP additions */
+.development-banner{display:flex;gap:9px;align-items:center;margin:16px 0 0;padding:10px 13px;border:1px solid #f0dcb9;border-radius:11px;background:#fff8eb;color:#80612e;font-size:11px}
+.development-banner strong{white-space:nowrap;color:#79531b}
+.header-actions{gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.workspace-grid{grid-template-columns:minmax(0,1.25fr) minmax(340px,.95fr)}
+.side-column{gap:14px}
+.filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px}
+.filter-grid input,.filter-grid select,.custom-report input{width:100%;min-width:0;padding:8px 9px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font:inherit;font-size:11px}
+.filter-grid input{grid-column:span 2}
+.managed-transaction{align-items:flex-start;padding:12px 0}
+.transaction-side{display:grid;justify-items:end;gap:5px;flex:0 0 auto}
+.row-actions,.trip-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.row-actions button,.trip-actions button{border:0;background:transparent;color:var(--teal);padding:2px 0;font-size:10px;font-weight:800}
+.row-actions button:last-child{color:#b35d58}
+.list-footnote{margin:9px 0 0;color:#96a3af;font-size:10px;text-align:right}
+.budget-list{display:grid;gap:13px}
+.budget-item{padding:10px 0;border-top:1px solid #edf1f5}
+.budget-item:first-child{padding-top:0;border-top:0}
+.budget-heading,.budget-foot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.budget-heading strong{font-size:11px}
+.budget-heading span{color:#738496;font-size:10px;font-weight:700}
+.budget-track{height:7px;margin:8px 0 5px;border-radius:8px;background:#edf1f4;overflow:hidden}
+.budget-track span{display:block;height:100%;border-radius:8px;background:#3c9a83}
+.budget-track span.near{background:#d3a34f}
+.budget-track span.over{background:#c96a64}
+.budget-foot small{color:#8292a1;font-size:9px}
+.trip-item{gap:8px}
+.trip-actions{justify-content:flex-end}
+.custom-report{display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap;margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}
+.custom-report label{display:grid;gap:4px;color:var(--muted);font-size:10px;font-weight:700}
+.custom-report input{min-width:132px}
+.custom-report .button{align-self:end}
+.report-result{line-height:1.45}
+.report-period{margin:0 0 10px;color:#8796a5;font-size:10px}
+.report-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.report-summary-grid>div{display:grid;gap:3px;padding:11px;border:1px solid #e7edf1;border-radius:10px;background:#fff}
+.report-summary-grid small,.report-summary-grid span{color:#8192a2;font-size:9px}
+.report-summary-grid strong{font-size:12px;color:var(--ink)}
+.report-result h3{margin:14px 0 5px;font-size:11px}
+.report-breakdown{display:grid;gap:6px}
+.report-breakdown>div{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #e8edf1;font-size:11px}
+.report-breakdown strong{white-space:nowrap}
+.empty-report{color:#8796a5;font-size:11px}
+.form-help{margin:12px 0 0;color:#8392a0;font-size:10px}
+@media(max-width:900px){.workspace-grid{grid-template-columns:1fr}.side-column{grid-template-columns:1fr 1fr}.side-column>.panel:first-child{grid-column:span 2}}
+@media(max-width:640px){.app-shell{width:calc(100% - 20px)}.topbar{height:auto;min-height:68px;padding:10px 0;align-items:flex-start;gap:10px}.header-actions{max-width:64%}.header-actions .button{font-size:9px;padding:7px 8px}.development-banner{align-items:flex-start;flex-direction:column;gap:2px}.welcome-row{gap:8px}.stats-grid{grid-template-columns:1fr 1fr}.stat-card strong{font-size:16px}.side-column{grid-template-columns:1fr}.side-column>.panel:first-child{grid-column:auto}.filter-grid{grid-template-columns:1fr 1fr}.custom-report{align-items:stretch}.custom-report label{flex:1}.custom-report .button{align-self:end}.report-summary-grid{grid-template-columns:1fr 1fr}}
