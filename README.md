@@ -1,32 +1,36 @@
 # Smart Ledger — Ganathe Finance
 
-A lightweight, family-focused expense and money management Progressive Web App (PWA).
+A lightweight family finance PWA with a first-party conversational interface.
 
-## Project principles
-- Browser-first: HTML, CSS and vanilla JavaScript.
-- PWA installability and responsive mobile/desktop UI.
-- Family expense tracking, shared trips, budgets and reports.
-- OneDrive personal Excel workbook is the Phase 1 data-store candidate.
-- Keep storage behind a repository interface so a future database can replace Excel without rewriting business logic.
-- AI is optional and must never be required for core financial calculations.
+## Product principles
+- One general application for personal/family finances. Trip mode is a core module, not a separate edition.
+- Conversation is a first-party interface; forms and clickable actions always remain available.
+- Core financial calculations and commands do not depend on hosted AI.
+- Keep data access behind a repository boundary so a future database can replace Excel without rewriting business logic.
+- Phase 1 data store: one personal OneDrive workbook, `GanatheFinance.xlsx`, with two simple sheets: `Transactions` and `Trips`.
 
-## Current status
-**Foundation setup.** The Excel schema is at version 1.1. Before building the full app, validate Microsoft personal OneDrive file download/upload, version conflict detection and concurrent edits. Microsoft Graph Excel workbook table APIs must not be assumed to work with consumer OneDrive.
+## Current development
+The `foundation-v2` branch introduces:
+- Responsive dashboard and conversational UI.
+- Deterministic local intent parser for basic expense entry and report shortcuts.
+- Transaction and trip forms with confirmation before saving.
+- OneDrive file adapter using MSAL and Microsoft Graph driveItem file-content operations.
+- A simple two-sheet workbook model and initial regression tests.
+
+**OneDrive is not yet configured.** Add the Microsoft Entra SPA Client ID in `assets/js/config.js` and complete the proof-of-concept tests in `docs/ONEDRIVE-SETUP.md`. Until connected, the app clearly labels browser-only preview data as not synced. Do not use preview mode as the authoritative family ledger.
+
+## Workbook and concurrency
+The app edits the XLSX file itself using SheetJS; it does not rely on Graph Excel workbook/range APIs. Existing-file mutations request an upload session using the last observed eTag and retry on a 412 conflict. This is optimistic conflict handling, not a proven transactional multi-device database. The shared-workbook path and real concurrent-write behaviour must pass explicit two-device tests before wider family use.
 
 ## Repository layout
-- `src/app` — app shell and routing
-- `src/auth` — Microsoft sign-in
-- `src/data` — storage interfaces and adapters
-- `src/modules` — transactions, trips, budgets and reports
-- `assets` — CSS, JavaScript and images
-- `docs` — architecture, schema and test plan
-- `database` — blank Excel database template
+- `assets/js` — app, provider-independent command helpers and storage adapter
+- `assets/css` — responsive UI
+- `docs` — architecture and setup/test guidance
+- `tests` — regression tests
+- `cloudflare` — legacy hosted-AI experiment; not required by V2
 
 ## Security
-This repository contains application source and a blank schema template only. Never commit live financial data, passwords, OAuth secrets, access tokens or personal workbook copies. A public GitHub Pages deployment is publicly accessible; client-side role checks are not a security boundary.
+Never commit live financial records, passwords, OAuth secrets, access tokens or personal workbook copies. The Microsoft client ID is a public SPA identifier, not a secret. A public GitHub Pages deployment is publicly accessible; client-side role checks are not a security boundary.
 
 ## Local preview
-Open `index.html` in a browser or serve the repository root with any static HTTP server.
-
-## Deployment
-GitHub Pages should publish from `main` / root after it is enabled under **Settings → Pages**. The app is not yet connected to OneDrive and must not be used for real financial records.
+Serve the repository root with any static HTTP server or GitHub Pages. Preview transactions remain in this browser's local storage until OneDrive is connected.
