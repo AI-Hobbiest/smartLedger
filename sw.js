@@ -1,5 +1,14 @@
-const CACHE_NAME = "smart-ledger-shell-v1";
-const APP_SHELL = ["./", "./index.html", "./manifest.json", "./assets/css/app.css", "./assets/js/app.js"];
+const CACHE_NAME = "smart-ledger-shell-v2";
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./assets/css/app.css",
+  "./assets/js/config.js",
+  "./assets/js/ledger-core.js",
+  "./assets/js/onedrive-repository.js",
+  "./assets/js/app.js"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
