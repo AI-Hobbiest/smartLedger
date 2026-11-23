@@ -67,7 +67,7 @@
     if (!text) return { kind: "unknown", reason: "empty" };
     const lower = text.toLowerCase();
     const reportWords = /\b(report|summary|total|how much|show|list|spending|expenses)\b/.test(lower);
-    if (reportWords && /\b(today|yesterday|this week|week|this month|month|quarter|year|trip|expenses|spending)\b/.test(lower) &&
+    if (reportWords && /\b(today|yesterday|this week|week|this month|month|quarter|year|annual|trip|expenses|spending)\b/.test(lower) &&
         !/\b(spent|paid|bought|purchase|expense of)\s+(?:aed|inr|usd|omr|sgd|eur|gbp)?\s*\d/i.test(lower)) {
       const period = /\btoday\b/.test(lower) ? "today" :
         /\byesterday\b/.test(lower) ? "yesterday" :
