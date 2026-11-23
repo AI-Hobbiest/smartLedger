@@ -20,20 +20,19 @@
     }
 
     isConfigured() { return Boolean(config.microsoftClientId && config.microsoftClientId.trim()); }
-    isSharedWorkbookConfigured() { return Boolean(config.workbookDriveId && config.workbookItemId); }
 
     async signIn() {
       if (!this.isConfigured()) throw new Error("Microsoft sign-in is not configured yet. Add the app registration Client ID in assets/js/config.js.");
       const redirectResult = await this.client.handleRedirectPromise();
       if (redirectResult && redirectResult.account) this.account = redirectResult.account;
       if (!this.account) this.account = this.client.getAllAccounts()[0] || null;
-      if (!this.account) this.account = (await this.client.loginPopup({ scopes: config.scopes || ["User.Read", "Files.ReadWrite"] })).account;
+      if (!this.account) this.account = (await this.client.loginPopup({ scopes: config.scopes || ["Files.ReadWrite"] })).account;
       return this.getProfile();
     }
 
     async token() {
       if (!this.account) throw new Error("Connect your Microsoft account first.");
-      const request = { account: this.account, scopes: config.scopes || ["User.Read", "Files.ReadWrite"] };
+      const request = { account: this.account, scopes: config.scopes || ["Files.ReadWrite"] };
       try { return (await this.client.acquireTokenSilent(request)).accessToken; }
       catch (error) {
         if (error && (error.name === "InteractionRequiredAuthError" || error.errorCode === "interaction_required"))
@@ -56,23 +55,18 @@
     }
 
     async getProfile() {
-      const profile = await (await this.graph("/me?$select=displayName,mail,userPrincipalName")).json();
-      return { name: profile.displayName || profile.mail || profile.userPrincipalName || "Microsoft user",
-        email: profile.mail || profile.userPrincipalName || "" };
+      /* Use the identity already returned by MSAL; no separate Graph profile permission is needed. */
+      return { name: this.account.name || this.account.username || "Microsoft account",
+        email: this.account.username || "" };
     }
 
     itemRoute(itemId) {
-      if (config.workbookDriveId) return "/drives/" + encodeURIComponent(config.workbookDriveId) + "/items/" + encodeURIComponent(itemId);
       return "/me/drive/items/" + encodeURIComponent(itemId);
     }
 
     async getFileMetadata() {
-      let route;
-      if (this.isSharedWorkbookConfigured()) {
-        route = "/drives/" + encodeURIComponent(config.workbookDriveId) + "/items/" + encodeURIComponent(config.workbookItemId);
-      } else {
-        route = "/me/drive/root:/" + encodeURIComponent(config.workbookName || "GanatheFinance.xlsx");
-      }
+      /* Single-owner model: resolve the workbook in the signed-in account's own OneDrive. */
+      const route = "/me/drive/root:/" + encodeURIComponent(config.workbookName || "GanatheFinance.xlsx");
       this.lastItem = await (await this.graph(route + "?$select=id,name,eTag,size,lastModifiedDateTime,parentReference")).json();
       return this.lastItem;
     }
@@ -98,7 +92,6 @@
       try { await this.getFileMetadata(); }
       catch (error) {
         if (error.status !== 404) throw error;
-        if (this.isSharedWorkbookConfigured()) throw new Error("The shared workbook could not be found. Check its sharing permissions and configured IDs.");
         await this.createWorkbookInDrive();
       }
       return this.loadWorkbook();
@@ -183,10 +176,6 @@
       return { transactions: this.rows(loaded.workbook, "Transactions"), trips: this.rows(loaded.workbook, "Trips"), item: loaded.item };
     }
 
-    getSharedWorkbookReference() {
-      if (!this.lastItem) return null;
-      return { driveId: this.lastItem.parentReference && this.lastItem.parentReference.driveId || "", itemId: this.lastItem.id || "" };
-    }
   }
   root.GanatheOneDrive = OneDriveRepository;
 })(window);
