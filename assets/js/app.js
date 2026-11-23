@@ -128,7 +128,9 @@
     $("txCategory").innerHTML = ($("txType").value === "Income" ? core.INCOME_CATEGORIES : core.CATEGORIES)
       .map(value => '<option value="' + safe(value) + '">' + safe(value) + '</option>').join("");
     $("budgetCategory").innerHTML = expenseOptions;
-    $("transactionCategoryFilter").innerHTML = '<option value="">All categories</option>' + categories;
+    const filterCategories = [...new Set([...core.CATEGORIES, ...core.INCOME_CATEGORIES])];
+    $("transactionCategoryFilter").innerHTML = '<option value="">All categories</option>' +
+      filterCategories.map(value => '<option value="' + safe(value) + '">' + safe(value) + '</option>').join("");
     const tripOptions = data.trips.map(trip => '<option value="' + safe(trip.id) + '">' + safe(trip.name) + '</option>').join("");
     const currentTxTrip = $("txTrip").value, currentFilterTrip = $("transactionTripFilter").value;
     $("txTrip").innerHTML = '<option value="">Personal / non-trip</option>' + tripOptions;
@@ -268,7 +270,7 @@
   }
 
   function exportCsv() {
-    const rows = reportRows.length ? reportRows : filterTransactions();
+    const rows = filterTransactions();
     if (!rows.length) { addChat("There are no transactions to export.", "assistant"); return; }
     const headers = ["TransactionID","Date","Type","Description","Category","Amount","Currency","PaymentType","PaidBy","Trip","Notes"];
     const csvRows = rows.map(row => [row.id,row.date,row.type,row.description,row.category,row.amount,row.currency,row.paymentType,row.paidBy,tripName(row.tripId),row.notes]);
