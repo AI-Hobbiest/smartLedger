@@ -88,8 +88,8 @@
   function populateTripSelect() {
     const select = $("txTrip");
     const selected = select.value;
-    select.innerHTML = '<option value="">Personal / non-trip</option>' + trips.map(t => '<option value="' + safe(t.id) + '">' + safe(t.name) + '</option>').join("");
-    if (trips.some(t => t.id === selected)) select.value = selected;
+    select.innerHTML = '<option value="">Personal / non-trip</option>' + trips.map(t => '<option value="' + safe(t.name) + '">' + safe(t.name) + '</option>').join("");
+    if (trips.some(t => t.name === selected)) select.value = selected;
   }
   function addChat(text, who) {
     const wrapper = document.createElement("div");
