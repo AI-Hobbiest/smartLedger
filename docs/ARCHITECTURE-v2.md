@@ -1,7 +1,7 @@
 # Smart Ledger V2 foundation
 
 ## Product direction
-Smart Ledger is one general family-finance application. Trip mode is a core module, not a separate edition. The conversation experience is first-party UI and must continue to work without any hosted AI provider.
+Smart Ledger is one personal finance application. Trip mode is a core module, not a separate edition. The conversation experience is first-party UI and must continue to work without any hosted AI provider.
 
 ## Current branch
 Development branch: `foundation-v2`. Production `main` is not changed by this foundation work.
@@ -18,25 +18,26 @@ One file: `GanatheFinance.xlsx`. Keep the workbook intentionally simple:
 - `Trips`: trip details and participant names.
 Application-owned category/payment lists remain in code so the workbook does not become a configuration database.
 
-## Data access
-The application uses a repository boundary. The OneDrive adapter treats the workbook as a file and uses Microsoft Graph driveItem file-content APIs. It does not depend on the Graph Excel workbook/range APIs.
+## Data ownership and access
+The first release is single-owner and single-account. The signed-in personal Microsoft account owns the workbook in its own OneDrive root. The adapter resolves it through the `/me/drive` Graph routes; it does not use hard-coded owner drive IDs, shared item IDs, family invitations or per-member filtering.
 
-The adapter uses MSAL browser sign-in and delegated `Files.ReadWrite` access for personal Microsoft accounts. It reads the item metadata to obtain its download URL, downloads the binary workbook, edits it in the browser with SheetJS, then uploads through an upload session. The upload-session creation request sends the observed eTag in `If-Match`; a 412 conflict triggers a reload-and-retry for supported mutation operations.
+The adapter uses MSAL browser sign-in and delegated `Files.ReadWrite` access for personal Microsoft accounts. This permission is broad across the signed-in user's OneDrive files; although the app targets only `GanatheFinance.xlsx`, the Graph permission is not limited to that file. The adapter treats the workbook as a file and uses Microsoft Graph driveItem file-content APIs, not Graph Excel workbook/range APIs. It reads metadata to obtain the download URL, downloads the binary workbook, edits it in the browser with SheetJS, then uploads through an upload session. The upload-session creation request sends the observed eTag in `If-Match`; a 412 conflict triggers a reload-and-retry for supported mutation operations.
 
-**Concurrency limitation:** This is optimistic conflict handling, not a transactional database. Before enabling concurrent edits from multiple accounts/devices for real trip data, test the exact OneDrive Personal behaviour (including changes occurring after upload-session creation). If final-write fencing cannot be demonstrated, use a single designated writer for the first release.
+**Multi-device limitation:** A single account may still use multiple devices at the same time. eTag handling is optimistic conflict handling, not a transactional database. Test sequential and near-simultaneous writes from two devices before treating OneDrive as a reliable ledger backend.
 
 ## Preview mode
-Until OneDrive is configured, entries are saved in this browser only. The interface explicitly labels this as local preview and must not be used as the authoritative shared ledger.
+Until OneDrive is configured, entries are saved in this browser only. The interface explicitly labels this as local preview and must not be used as the authoritative ledger.
 
 ## Not in this stage
 - Hosted AI provider
 - Cloudflare Worker / Turnstile
 - Server-side database
 - Multi-provider AI routing
+- Multi-account or shared-family access
 
 ## Next release gates
 1. Register a Microsoft Entra SPA and configure the public client ID.
-2. Verify sign-in using the personal Microsoft account.
-3. Create/read/update the single workbook.
-4. Test stale-version conflicts and two-device writes.
-5. Only then promote OneDrive mode as ready for real family and trip use.
+2. Verify sign-in using the personal Microsoft account that owns the workbook.
+3. Create/read/update the workbook in that account's OneDrive.
+4. Test sequential and near-simultaneous writes across two devices.
+5. Only then promote OneDrive mode as ready for real use.
