@@ -77,9 +77,10 @@
     && !/\b(add|record|log|new|enter)\b.{0,35}\b(expense|income|transaction|salary)\b/i.test(t)
     && !/\b(spent|paid|bought|purchased|received|earned|credited|sent me|gave me|paid me)\s+(?:aed|inr|usd|omr|sgd|eur|gbp|\d|me\b)/i.test(t);
   const isCorrection = t => /\b(actually|i meant|change (it|that)|make (it|that)|set (it|the amount)|wrong|correct that|previous one|last transaction)\b/i.test(t);
-  const isReportFollowUp = (t, prior) => !!prior && (
-    /^(?:(?:just|only)\s+)?(?:today|yesterday|tomorrow|this week|last week|this month|last month|last 7 days|past 7 days)[?.!\s]*$/i.test(t) ||
-    /^(what about|how about|and|also|break it down|show me|just|only|no|not|instead|rather)\b/i.test(t) &&
+  const hasNewTransactionCue = t => /\\b(spent|paid|bought|purchased|received|earned|credited|salary|refund|reimbursed|sent me|gave me|paid me)\\b/i.test(t);
+  const isReportFollowUp = (t, prior) => !!prior && !hasNewTransactionCue(t) && (
+    /^(?:(?:just|only)\\s+)?(?:today|yesterday|tomorrow|this week|last week|this month|last month|last 7 days|past 7 days)[?.!\\s]*$/i.test(t) ||
+    /^(what about|how about|and|also|break it down|show me|just|only|no|not|instead|rather)\\b/i.test(t) &&
       /(today|yesterday|tomorrow|week|month|category|grocer|food|travel|cash|card|income|expense)/i.test(t)
   );
   const mergeReport = (prior, text, now) => {
