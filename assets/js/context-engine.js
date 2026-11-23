@@ -74,7 +74,8 @@
   };
   const isGreeting = t => /^(hi|hello|hey|hiya|good morning|good afternoon|good evening)[!.\s]*$/i.test(t);
   const isReport = t => /\b(summary|summar(y|ise|ize)|report|breakdown|how much|total|show|list|what did i spend|transactions?|expense|expenses|expnse|expence|expens|spend|spending|outgoings?|income)\b/i.test(t)
-    && !/\b(spent|paid|bought|purchased|received|earned|credited)\s+(?:aed|inr|usd|omr|sgd|eur|gbp|\d)/i.test(t);
+    && !/\b(add|record|log|new|enter)\b.{0,35}\b(expense|income|transaction|salary)\b/i.test(t)
+    && !/\b(spent|paid|bought|purchased|received|earned|credited|sent me|gave me|paid me)\s+(?:aed|inr|usd|omr|sgd|eur|gbp|\d|me\b)/i.test(t);
   const isCorrection = t => /\b(actually|i meant|change (it|that)|make (it|that)|set (it|the amount)|wrong|correct that|previous one|last transaction)\b/i.test(t);
   const isReportFollowUp = (t, prior) => !!prior && (
     /^(?:(?:just|only)\s+)?(?:today|yesterday|tomorrow|this week|last week|this month|last month|last 7 days|past 7 days)[?.!\s]*$/i.test(t) ||
@@ -106,7 +107,7 @@
         }
         if(isCorrection(t))return {intent:"correction",text};
         if(/\b(help|what can you do|how does this work)\b/i.test(t))return {intent:"help",text};
-        if(/\b(spent|paid|bought|purchased|received|earned|credited|salary|refund|reimbursed)\b/i.test(t) || /\b\d+(?:\.\d{1,2})?\s*(aed|inr|usd|omr|sgd|eur|gbp)\b/i.test(t)){
+        if(/\b(spent|paid|bought|purchased|received|earned|credited|salary|refund|reimbursed|sent me|gave me|paid me)\b/i.test(t) || /\b(add|record|log|new|enter)\b.{0,35}\b(expense|income|salary|transaction)\b/i.test(t) || /\b\d+(?:\.\d{1,2})?\s*(aed|inr|usd|omr|sgd|eur|gbp)\b/i.test(t)){
           report=null;lastIntent="transaction";return {intent:"transaction",text};
         }
         return {intent:"unknown",text,previousIntent:lastIntent};
