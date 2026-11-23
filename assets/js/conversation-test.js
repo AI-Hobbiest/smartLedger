@@ -121,7 +121,7 @@
     if(draft.type==="Income"){
       return "Got it — I’ve prepared an income entry for "+amount+(draft.description&&draft.description!=="Transaction"?" ("+draft.description+")":"")+". Please check the summary below and confirm when you’re ready.";
     }
-    return "Got it — I’ve prepared an expense for "+amount+" on "+description+". "+(paymentLabel(draft.payment)==="Payment not specified"?"I haven’t got the payment method yet — was that cash, card, or another method? You can just reply here. ":"")+"Please check the summary below and confirm when you’re ready.";
+    return "Got it — I’ve prepared an expense for "+amount+" on "+description+". "+(paymentLabel(draft.payment)==="Payment not specified"?"The payment method wasn’t included, so I’ve left a quick selector in the confirmation below. ":"")+"Please check the summary and confirm when you’re ready.";
   };
   const renderReview = draft => {
     pending=draft;context.setPending(draft);
@@ -133,7 +133,8 @@
       '<div class="compact-review-summary">'+
         '<div class="compact-review-top"><span class="review-kind" id="review-type-label">'+escapeHtml(draft.type.toUpperCase())+'</span><strong id="review-amount-label">'+escapeHtml(currencyLabel(draft.currency,draft.amount))+'</strong></div>'+
         '<div class="review-description" id="review-description-label">'+escapeHtml(draft.description||"Transaction")+'</div>'+
-        '<div class="review-meta"><span id="review-date-label">'+escapeHtml(dateLabel(draft.date))+'</span><span id="review-category-label">'+escapeHtml(draft.category||"Uncategorised")+'</span><span id="review-payment-label">'+escapeHtml(paymentLabel(draft.payment))+'</span></div>'+
+        '<div class="review-meta"><span id="review-date-label">'+escapeHtml(dateLabel(draft.date))+'</span><span id="review-category-label">'+escapeHtml(draft.category||"Uncategorised")+'</span>'+(draft.payment==="Other"?"":'<span id="review-payment-label">'+escapeHtml(paymentLabel(draft.payment))+'</span>')+'</div>'+
+        (draft.payment==="Other"?'<div class="compact-payment-field" id="compact-payment-field"><label for="quick-payment">Payment method <small>Not mentioned · optional</small></label><select id="quick-payment"><option value="" selected>Choose payment method</option>'+payments.map(v=>'<option value="'+escapeHtml(v)+'">'+escapeHtml(v==="Other"?"Other / Not sure":v)+'</option>').join("")+'</select></div>':"")+
       '</div>'+
       '<div class="review-actions compact-review-actions"><button class="confirm-btn" id="confirm-entry" type="button">Confirm</button><button class="edit-cancel" id="edit-entry" type="button">Edit details</button><button class="edit-cancel" id="cancel-entry" type="button">Cancel</button></div>'+
       '<div class="review-edit-fields" id="review-edit-fields" hidden>'+
@@ -154,7 +155,8 @@
     const editFields=$("review-edit-fields");
     const readDraft=()=>{
       const currency=$("r-currency").value,amount=Number($("r-amount").value||0),rate=currency==="AED"?1:Number($("r-rate").value||0);
-      return {type:$("r-type").value,date:$("r-date").value,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,category:$("r-category").value,payment:$("r-payment").value,description:$("r-description").value.trim(),spentBy:$("r-spent").value,spentByLabel:$("r-spent").options[$("r-spent").selectedIndex].text,notes:$("r-notes").value.trim()};
+      const quickPayment=$("quick-payment"),payment=quickPayment&&quickPayment.value?quickPayment.value:$("r-payment").value;
+      return {type:$("r-type").value,date:$("r-date").value,amount,currency,fxRateToBase:rate,baseAmount:amount*rate,category:$("r-category").value,payment,description:$("r-description").value.trim(),spentBy:$("r-spent").value,spentByLabel:$("r-spent").options[$("r-spent").selectedIndex].text,notes:$("r-notes").value.trim()};
     };
     const syncSummary=()=>{
       const value=readDraft();
@@ -169,6 +171,8 @@
       return value;
     };
     const updateEditPreview=()=>syncSummary();
+    const quickPayment=$("quick-payment");
+    if(quickPayment)quickPayment.addEventListener("change",()=>{$("r-payment").value=quickPayment.value||"Other";syncSummary();});
     ["r-type","r-date","r-amount","r-currency","r-category","r-payment","r-description","r-spent","r-notes","r-rate"].forEach(id=>{
       $(id).addEventListener("input",updateEditPreview);
       $(id).addEventListener("change",updateEditPreview);
@@ -181,7 +185,7 @@
       editFields.hidden=!editFields.hidden;
       card.classList.toggle("is-editing",!editFields.hidden);
       $("edit-entry").textContent=editFields.hidden?"Edit details":"Hide details";
-      if(!editFields.hidden)syncSummary();
+      if(!editFields.hidden){const quickPayment=$("quick-payment");$("r-payment").value=quickPayment&&quickPayment.value?quickPayment.value:($("r-payment").value||"Other");syncSummary();}
     });
     $("confirm-entry").addEventListener("click",()=>{
       const value=readDraft();
