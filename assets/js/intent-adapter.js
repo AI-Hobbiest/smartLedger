@@ -162,11 +162,14 @@
     if (!route || route.intent !== "transaction") return null;
     const explicitType = typeFrom(text);
     const addIntent = /\\b(add|record|log|new|enter)\\b.{0,35}\\b(expense|income|salary|purchase|spending|transaction)\\b/i.test(text);
-    if (!explicitType && !addIntent) return null;
     const amounts = parseAmountMatches(text);
     if (!amounts.length) return null;
     const segments = splitTransactionSegments(text);
     const usable = segments.length > 1 ? segments.filter(segment => parseAmountMatches(segment).length > 0) : [text];
+    // Mixed messages are accepted only when every amount-bearing clause has its
+    // own clear type. Never turn a bare amount into an invented expense.
+    if (!explicitType && !addIntent && !usable.some(segment => typeFrom(segment))) return null;
+    if (!usable.every(segment => typeFrom(segment) || explicitType || addIntent)) return null;
     if (usable.length > 20) {
       return {intent:"clarification",source:"local-fallback",question:"I can review up to 20 transactions at once. Please split this into two messages."};
     }
