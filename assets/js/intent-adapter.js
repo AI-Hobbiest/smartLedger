@@ -88,7 +88,7 @@
   const cleanDescription = (segment, amountMatch) => {
     let value=String(segment||"");
     if(amountMatch)value=value.replace(amountMatch.raw," ");
-    value=value.replace(/\b(add|record|log|new|enter|a|an|the|i|we|my|our|me|some|money|spent|spend|paid|pay|purchase|purchased|bought|for|on|at|in|using|with|today|yesterday|tomorrow|day before yesterday|received|salary|income|earned|credited|reimbursement|reimbursed|refund|cashback|expense|expenses|of|and|also|plus|then|aed|dhs?|dirhams?|inr|rs\.?|rupees?|usd|omr|sgd|eur|gbp)\b/gi," ");
+    value=value.replace(/\b(add|record|log|new|enter|just|a|an|the|i|we|my|our|me|some|money|spent|spend|paid|pay|purchase|purchased|bought|for|on|at|in|using|with|today|yesterday|tomorrow|day before yesterday|received|salary|income|earned|credited|reimbursement|reimbursed|refund|cashback|expense|expenses|of|and|also|plus|then|aed|dhs?|dirhams?|inr|rs\.?|rupees?|usd|omr|sgd|eur|gbp)\b/gi," ");
     value=value.replace(/\b(credit card|debit card|bank transfer|digital wallet|cash|wallet|cc)\b/gi," ");
     value=value.replace(/\$|[,;.!?]/g," ").replace(/\s+/g," ").trim();
     return value?value.charAt(0).toUpperCase()+value.slice(1):"Transaction";
@@ -154,6 +154,30 @@
     if(transaction.needsDescription)return transaction.type==="Income"?"What was this income from?":"What was the expense for?";
     return "";
   };
+
+  // Keep clear, fully specified transactions working even when the optional AI
+  // provider or its security/network bridge is unavailable. Only create a draft
+  // when the user's wording explicitly identifies income/expense intent and amount.
+  const localTransactionFallback = (text, route) => {
+    if (!route || route.intent !== "transaction") return null;
+    const explicitType = typeFrom(text);
+    const addIntent = /\\b(add|record|log|new|enter)\\b.{0,35}\\b(expense|income|salary|purchase|spending|transaction)\\b/i.test(text);
+    if (!explicitType && !addIntent) return null;
+    const amounts = parseAmountMatches(text);
+    if (!amounts.length) return null;
+    const segments = splitTransactionSegments(text);
+    const usable = segments.length > 1 ? segments.filter(segment => parseAmountMatches(segment).length > 0) : [text];
+    if (usable.length > 20) {
+      return {intent:"clarification",source:"local-fallback",question:"I can review up to 20 transactions at once. Please split this into two messages."};
+    }
+    const sharedType = explicitType;
+    const sharedCurrency = amounts[0].currency;
+    const sharedPayment = paymentFrom(text);
+    const transactions = usable.map(segment => makeDraft(segment,text,{sharedType,sharedCurrency,sharedPayment})).filter(Boolean);
+    if (!transactions.length) return null;
+    return {intent:"transaction.create",transactions,source:"local-fallback",clarification:null,confidence:"heuristic"};
+  };
+
   const normalizeProviderDraft = (raw, defaults={}) => {
     if(!raw||typeof raw!=="object")throw new Error("The language provider returned an invalid transaction draft.");
     const type=raw.type==="Income"?"Income":raw.type==="Expense"?"Expense":null;
@@ -220,6 +244,10 @@
             const result=await provider.interpret({message:text,context:conversation,schemaVersion:"1.0"});
             return validateProviderResult(result,text,conversation);
           }catch(error){
+            // A provider outage must not discard a transaction the local parser can
+            // safely understand. Keep AI errors for reports and ambiguous requests.
+            const fallback = localTransactionFallback(text,route);
+            if (fallback) return fallback;
             const safeMessage=String(error&&error.message||"The free AI service is temporarily unavailable. Your message was not saved.");
             return {intent:"provider.error",source:"provider",message:safeMessage.slice(0,400)};
           }
