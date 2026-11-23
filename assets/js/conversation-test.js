@@ -114,7 +114,7 @@
     return Number.isNaN(parsed.getTime())?value:parsed.toLocaleDateString(undefined,{day:"numeric",month:"short",year:parts[0]===new Date().getFullYear()?undefined:"numeric"});
   };
   const currencyLabel = (currency,amount) => String(currency||"AED")+" "+Number(amount||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-  const paymentLabel = value => value&&value!=="Other"?value:"Payment not specified";
+  const paymentLabel = value => value==="Other"?"Other / Not sure":value||"Payment not specified";
   const transactionAcknowledgement = draft => {
     const amount=currencyLabel(draft.currency,draft.amount);
     const description=(draft.description||"transaction").toLowerCase();
@@ -244,7 +244,7 @@
       '<label class="wide">Description<input id="b-description-'+index+'" maxlength="120" value="'+escapeHtml(draft.description)+'"></label>'+
       '<label class="wide">Notes<input id="b-notes-'+index+'" maxlength="500" value="" placeholder="Optional notes"></label>'+
       '</div><div class="base-preview" id="b-preview-'+index+'"></div></section>').join("");
-    const summaryRows=drafts.map((draft,index)=>'<div class="compact-batch-row"><div><b>'+(index+1)+'. '+escapeHtml(draft.description||"Transaction")+'</b><small>'+escapeHtml(draft.type+' · '+draft.category+' · '+dateLabel(draft.date))+'</small><small class="'+(draft.payment==="Other"?"payment-needed":"")+'">'+escapeHtml(draft.payment&&draft.payment!=="Other"?draft.payment:"Payment method required")+'</small></div><strong>'+escapeHtml(currencyLabel(draft.currency,draft.amount))+'</strong></div>').join("");
+    const summaryRows=drafts.map((draft,index)=>'<div class="compact-batch-row"><div><b>'+(index+1)+'. '+escapeHtml(draft.description||"Transaction")+'</b><small>'+escapeHtml(draft.type+' · '+draft.category+' · '+dateLabel(draft.date))+'</small><small class="'+(draft.payment&&draft.payment!=="Other"?"":"payment-needed")+'">'+escapeHtml(draft.payment&&draft.payment!=="Other"?draft.payment:"Payment method required")+'</small></div><strong>'+escapeHtml(currencyLabel(draft.currency,draft.amount))+'</strong></div>').join("");
     card.innerHTML='<div class="review-head"><b>Review '+drafts.length+' entries</b><span>DRAFT · NOT SAVED</span></div>'+
       '<div class="compact-batch-summary">'+summaryRows+'</div>'+
       '<div class="review-actions compact-review-actions"><button class="confirm-btn" id="confirm-batch" type="button">Confirm all</button><button class="edit-cancel" id="edit-batch-entries" type="button">Edit entries</button><button class="edit-cancel" id="cancel-batch" type="button">Cancel</button></div>'+
