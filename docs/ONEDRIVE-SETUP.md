@@ -1,41 +1,32 @@
 # OneDrive setup for Smart Ledger
 
-This is a browser-only public client. Never create or place a client secret in GitHub Pages.
+The browser application is a public SPA. Never create or place a client secret in GitHub Pages.
 
-## 1. Register the application
-1. Open Microsoft Entra admin center: https://entra.microsoft.com/
-2. Go to App registrations → New registration.
-3. Name: `Ganathe Smart Ledger`.
-4. Supported account types: **Personal Microsoft accounts only** (or accounts in any organizational directory and personal Microsoft accounts if you later need work accounts).
-5. Register the application.
+## Register the application
+1. Open https://entra.microsoft.com/ → App registrations → New registration.
+2. Name it `Ganathe Smart Ledger`.
+3. Choose personal Microsoft accounts only (or include work/school accounts if required).
+4. Under Authentication → Add a platform → Single-page application, register the exact GitHub Pages URL: `https://ai-hobbiest.github.io/smartLedger/`.
+5. Copy the Application (client) ID into `assets/js/config.js`. Do not create a client secret.
+6. Add Microsoft Graph delegated permissions `User.Read` and `Files.ReadWrite`.
 
-## 2. Configure the SPA redirect
-1. Open Authentication → Add a platform → Single-page application.
-2. Add the exact GitHub Pages URL, for example:
-   `https://ai-hobbiest.github.io/smartLedger/`
-3. Do not enable implicit grant. MSAL uses authorization code flow with PKCE.
-4. Copy the Application (client) ID.
+## Single shared workbook
+1. The workbook name is `GanatheFinance.xlsx`.
+2. The first owner account creates it in the root of its personal OneDrive (the app creates it if missing).
+3. The owner shares that same workbook with family members, granting edit access only to intended participants.
+4. After the owner first connects, retrieve the shared workbook reference with `smartLedgerWorkbookReference()` in the browser developer console. It returns the non-secret `driveId` and `itemId`.
+5. Put those values in `workbookDriveId` and `workbookItemId` in `assets/js/config.js`, then deploy the updated public config. Each family member signs in with their own Microsoft account and accesses the same shared workbook by those IDs.
 
-## 3. Add delegated permissions
-In API permissions, add Microsoft Graph delegated permissions:
-- `User.Read`
-- `Files.ReadWrite`
+All members with edit permission can see the workbook's data. The app does not enforce private rows per member.
 
-Do not create a client secret. The browser app uses delegated user sign-in.
+## First connection test
+1. Sign in with the personal Microsoft account that owns the workbook.
+2. Confirm the two simple sheets exist: Transactions and Trips.
+3. Add a clearly marked test transaction, reload the app, and verify it persists.
+4. Remove the test row from the app or workbook after the test.
+5. Repeat using a second family Microsoft account after sharing the workbook.
 
-## 4. Configure the application
-Edit `assets/js/config.js` and set `microsoftClientId` to the Application (client) ID. This is a public identifier, not a secret. Keep authority set to `https://login.microsoftonline.com/consumers` for personal Microsoft accounts.
+## Concurrency test / limitation
+Existing-file writes start a Graph upload session with the last observed eTag in `If-Match`. A 412 conflict triggers reload-and-retry for supported append operations. This is optimistic conflict handling, not a proven transactional multi-writer database. Test two devices saving near-simultaneously and inspect the final file/version history before using the shared workbook as the live trip ledger.
 
-## 5. First connection test
-1. Open the GitHub Pages app.
-2. Select Connect OneDrive and sign in with the personal Microsoft account that owns the workbook.
-3. If `GanatheFinance.xlsx` is not present in the OneDrive root, the app creates it with two simple sheets: Transactions and Trips.
-4. Add a test transaction, reload the app, and verify that it remains.
-5. Do not enter real family finances until this test and the concurrent-write checks pass.
-
-## Data and concurrency notes
-- The browser app reads file metadata and downloads the workbook's binary content.
-- SheetJS processes the workbook; the Graph Excel workbook API is not used.
-- Existing-file saves use a Graph upload session with the last observed eTag supplied as `If-Match`.
-- A 412 response means another edit won the race; the app reloads and retries the transaction append.
-- This is not yet a proven multi-writer transaction system for a shared personal OneDrive workbook. Run two-device tests before treating simultaneous writes as production-ready.
+Until Microsoft sign-in and the read/write/concurrency tests pass, browser preview mode is local-only and is not the authoritative ledger.
