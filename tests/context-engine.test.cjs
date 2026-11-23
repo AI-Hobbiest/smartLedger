@@ -87,3 +87,22 @@ test("money paid to me by a family member is an incoming transaction", () => {
   const result = context.route("My brother paid me some money");
   assert.equal(result.intent, "transaction");
 });
+
+
+test("a new purchase does not become a report follow-up just because a report was active", () => {
+  const context = engineApi.create({ now: fixedNow });
+  const prior = context.route("Show expenses yesterday");
+  assert.equal(prior.intent, "report");
+  const result = context.route("Just bought food for 57.75 AED");
+  assert.equal(result.intent, "transaction");
+  assert.equal(context.getReport(), null);
+});
+
+test("short date-only replies still follow an active report", () => {
+  const context = engineApi.create({ now: fixedNow });
+  context.route("Show expenses this month");
+  const result = context.route("Just today?");
+  assert.equal(result.intent, "report");
+  assert.equal(result.isFollowUp, true);
+  assert.equal(result.report.period.from, "2026-11-11");
+});
