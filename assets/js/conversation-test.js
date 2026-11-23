@@ -435,7 +435,7 @@ const paymentMatch=lower.match(/\b(cash|credit card|debit card|bank transfer|dig
     addMessage(transactionAcknowledgement(draft));
     renderReview(draft);
   });
-  document.querySelectorAll(".suggestion").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("chat-form").requestSubmit();}));
+  document.querySelectorAll(".suggestion").forEach(btn=>btn.addEventListener("click",()=>{$("prompt").value=btn.dataset.prompt;$("prompt").focus();const end=$("prompt").value.length;$("prompt").setSelectionRange(end,end);}));
   $("clear-chat").addEventListener("click",()=>{$("chat").innerHTML='<div class="message assistant"><div class="bubble"><b>Chat reset.</b><p>Describe a transaction to get started.</p></div><time>Smart Ledger</time></div>';pending=null;pendingCard=null;pendingConversation=null;lastReportQuery=null;lastSavedId=null;context.clear();window.SmartLedgerConversationHistory=[];});
   $("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("chat-form").requestSubmit();}});
   updateCount();
