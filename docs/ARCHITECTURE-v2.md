@@ -23,7 +23,7 @@ OneDrive authentication is intentionally deferred. Do not require users to creat
 - Reports preserve currency separation and can filter by date range or trip.
 - A future database migration should map the same versioned snapshot to normalised transaction, trip and budget tables.
 
-## Feature MVP in progress
+## Feature MVP delivered in development branch
 1. Dashboard: monthly expense, income, balance by currency and active trips.
 2. Transactions: conversational draft/review, form create/edit, search, filters and delete.
 3. Trips: create/edit/status, link spending, trip summary.
