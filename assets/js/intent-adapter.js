@@ -207,10 +207,11 @@
       async interpret(input, conversation={}) {
         const text=clean(input);
         if(!text)return {intent:"unknown",source:"local-fallback",text:""};
+        const route=window.SmartLedgerContext?window.SmartLedgerContext.create().route(text):{intent:"unknown"};
         const amountsInMessage=parseAmountMatches(text);
         const cue=/\b(spent|spend|paid|pay|purchase|purchased|bought|expense|expenses|received|earned|credited|salary|refund|reimbursed|paid me|sent me|gave me)\b/i.test(text)
           || /\b(add|record|log|new|enter)\b.{0,35}\b(expense|income|salary|pay|purchase|transaction)\b/i.test(text);
-        const incomplete=cue?transactionFromText(text):null;
+        const incomplete=route.intent!=="report"&&cue?transactionFromText(text):null;
         if(incomplete && (!amountsInMessage.length || incomplete.needsPurpose || incomplete.needsDescription)){
           return {intent:"clarification",source:"local-fallback",question:clarificationQuestion(incomplete),pendingTransaction:incomplete};
         }
@@ -223,7 +224,6 @@
             return {intent:"provider.error",source:"provider",message:safeMessage.slice(0,400)};
           }
         }
-        const route=window.SmartLedgerContext?window.SmartLedgerContext.create().route(text):{intent:"unknown"};
         if(route.intent==="greeting"||route.intent==="report"||route.intent==="help"||route.intent==="correction"){
           return {intent:route.intent==="report"?"report.query":route.intent,source:"local-fallback",text,route};
         }
