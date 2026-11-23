@@ -112,3 +112,40 @@ test("a new clause with its own verb creates a mixed second transaction", async 
   assert.deepEqual(Array.from(result.transactions,x=>x.type),["Expense","Income"]);
   assert.deepEqual(Array.from(result.transactions,x=>x.category),["Food/EatOut","Salary"]);
 });
+
+
+test("an incoming family payment without an amount asks for it conversationally and keeps the source", async () => {
+  let providerCalled=false;
+  const provider={interpret:async()=>{providerCalled=true;return {intent:"unknown"};}};
+  const result=await adapterApi.create({provider}).interpret("My brother paid me some money");
+  assert.equal(providerCalled,false);
+  assert.equal(result.intent,"clarification");
+  assert.match(result.question,/how much/i);
+  assert.equal(result.pendingTransaction.type,"Income");
+  assert.equal(result.pendingTransaction.receivedFrom,"Brother");
+  assert.equal(result.pendingTransaction.needsPurpose,true);
+  assert.match(result.pendingTransaction.description,/Money received from Brother/);
+});
+
+test("an incoming family payment with an amount asks whether it was a gift or repayment", async () => {
+  const result=await adapterApi.create().interpret("My brother paid me AED 200");
+  assert.equal(result.intent,"clarification");
+  assert.equal(result.pendingTransaction.type,"Income");
+  assert.equal(result.pendingTransaction.amount,200);
+  assert.equal(result.pendingTransaction.needsPurpose,true);
+  assert.match(result.question,/repayment.*gift.*loan/i);
+});
+
+test("money I paid to my brother remains an expense, not income", async () => {
+  const result=await adapterApi.create().interpret("I paid my brother AED 200");
+  assert.equal(result.intent,"transaction.create");
+  assert.equal(result.transactions[0].type,"Expense");
+  assert.equal(result.transactions[0].amount,200);
+});
+
+test("Add an expense starts a missing-detail conversation instead of requiring a form", async () => {
+  const result=await adapterApi.create().interpret("Add an expense");
+  assert.equal(result.intent,"clarification");
+  assert.equal(result.pendingTransaction.type,"Expense");
+  assert.match(result.question,/how much/i);
+});
