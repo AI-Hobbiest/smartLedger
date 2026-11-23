@@ -14,7 +14,7 @@ test("single-entry confirmation requires an explicitly selected payment method",
 
 test("batch confirmation requires a payment method for every entry", () => {
   assert.match(source, /const paymentOptions=selected=>/);
-  assert.match(source, /<select id="b-payment-'+index\+'" required aria-required="true">/);
+  assert.match(source, /<select id="b-payment-'\+index\+'" required aria-required="true">/);
   assert.match(source, /if\(!payment\)/);
   assert.match(source, /Please choose a payment method for Transaction/);
 });
