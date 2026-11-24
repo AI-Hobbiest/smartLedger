@@ -363,21 +363,22 @@
     const tripId = $("txTrip").value;
     let available = [];
     if (tripId) {
-      const memberIds = data.tripMembers.filter(item => item.tripId === tripId && (item.membershipStatus || "Active") === "Active").map(item => item.userId);
+      const memberIds = data.tripMembers
+        .filter(item => item.tripId === tripId && (item.membershipStatus || "Active") === "Active")
+        .map(item => item.userId);
       available = data.users.filter(user => memberIds.includes(user.id) && (user.status || "Active") === "Active");
-      if (isAdminPreview()) {
-        data.users.filter(user => !user.isTripOnly && (user.status || "Active") === "Active").forEach(user => {
-          if (!available.some(item => item.id === user.id)) available.push(user);
-        });
-      }
     } else {
       available = isAdminPreview()
         ? data.users.filter(user => !user.isTripOnly && (user.status || "Active") === "Active")
         : (currentUser ? [currentUser] : []);
     }
-    if (currentUser && !available.some(user => user.id === currentUser.id)) available.unshift(currentUser);
-    $("txSpentByUser").innerHTML = available.map(user => '<option value="' + safe(user.id) + '">' + safe(user.name) + '</option>').join("");
-    $("txSpentByUser").value = available.some(user => user.id === selectedUserId) ? selectedUserId : (currentUser ? currentUser.id : "");
+    if (!tripId && currentUser && !available.some(user => user.id === currentUser.id)) available.unshift(currentUser);
+    $("txSpentByUser").innerHTML = '<option value="">Choose participant</option>' +
+      available.map(user => '<option value="' + safe(user.id) + '">' + safe(user.name) + (user.isTripOnly ? " · Trip-only" : "") + '</option>').join("");
+    const fallback = currentUser && available.some(user => user.id === currentUser.id)
+      ? currentUser.id
+      : (available[0] ? available[0].id : "");
+    $("txSpentByUser").value = available.some(user => user.id === selectedUserId) ? selectedUserId : fallback;
   }
 
   function openTransactionForm(row) {
@@ -412,7 +413,7 @@
       (!user.isTripOnly || scopedIds.has(user.id)) && (user.status || "Active") === "Active"
     );
     $("tripHouseholdUsers").innerHTML = users.map(user => {
-      const membership = existing.find(item => item.userId === user.id);
+      const membership = existing.find(item => item.userId === user.id && (item.membershipStatus || "Active") === "Active");
       const checked = !!membership || (!row && currentUser && currentUser.id === user.id);
       const role = membership && membership.tripRole || (currentUser && currentUser.id === user.id ? "Organizer" : "Member");
       const label = safe(user.name) + (user.isTripOnly ? " · Trip-only" : "");
@@ -665,6 +666,11 @@
         if (!row.date || !row.description || !row.paidBy || !row.spentByUserId) throw new Error("Complete the date, description, paid-by and spender fields.");
         if (existing) {
           if (!authz.canEditTransaction(currentUser, existing, data.trips, data.tripMembers)) throw new Error("You do not have permission to edit this transaction.");
+          const scopeChanged = row.tripId !== (existing.tripId || "");
+          const spenderChanged = row.spentByUserId !== existing.spentByUserId;
+          if ((scopeChanged || spenderChanged) && !authz.canCreateTransaction(currentUser, row, data.trips, data.tripMembers)) {
+            throw new Error("You do not have permission to move this transaction or change its trip participant.");
+          }
         } else if (!authz.canCreateTransaction(currentUser, row, data.trips, data.tripMembers)) {
           throw new Error("You do not have permission to add a transaction to this scope.");
         }
