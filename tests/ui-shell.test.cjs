@@ -148,3 +148,13 @@ test("floating assistant and second-pass mobile typography remain readable", () 
   assert.match(css, /\.development-banner\{font-size:13px/);
   assert.match(css, /\.transaction-list,.dashboard-recent-list,.budget-list,.trip-list\{font-size:14px\}/);
 });
+
+
+test("assistant quick prompts prioritize Add expense and use a compact launcher label", () => {
+  const row = html.match(/<div class="suggestion-row">([\\s\\S]*?)<\\/div>/);
+  assert.ok(row, "assistant quick prompt row should exist");
+  const prompts = [...row[1].matchAll(/data-prompt="([^"]+)"/g)].map(match => match[1]);
+  assert.equal(prompts[0], "Add an expense");
+  assert.match(html, /id="assistantLauncher"[\\s\\S]*?<span>Ask Ledger<\\/span>/);
+  assert.doesNotMatch(html, /<span>Ask Smart Assistant<\\/span>/);
+});
