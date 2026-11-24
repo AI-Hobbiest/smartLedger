@@ -11,7 +11,11 @@ A lightweight, family-focused expense and money management Progressive Web App (
 - AI is optional and must never be required for core financial calculations.
 
 ## Current status
-**Foundation setup.** The Excel schema is at version 1.1. Before building the full app, validate Microsoft personal OneDrive file download/upload, version conflict detection and concurrent edits. Microsoft Graph Excel workbook table APIs must not be assumed to work with consumer OneDrive.
+**RBAC and trip workflow prototype.** The logical schema is at version 1.2. The preview includes a local-only Demo Admin / Demo Member identity switcher, explicit trip membership, trip-scoped roles, schema v1-to-v2 migration, a three-step Admin trip wizard and an Admin-only trip close action.
+
+**Important:** the preview still stores data in this browser's localStorage. Its identity switcher and client-side permission checks are for functional testing only; they are not secure authentication or multi-user access. Do not enter real financial records. Persistent device sessions and production authorization require a trusted identity and data-access layer.
+
+Before shared production storage, validate Microsoft personal OneDrive file download/upload, version conflict detection and concurrent edits. Microsoft Graph Excel workbook table APIs must not be assumed to work with consumer OneDrive.
 
 ## Repository layout
 - `src/app` — app shell and routing
