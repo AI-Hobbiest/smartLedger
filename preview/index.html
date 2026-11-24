@@ -78,6 +78,26 @@
             <article class="stat-card stat-trips"><div class="stat-top"><span>Active trips</span><span class="stat-icon">✈</span></div><strong id="activeTrips">0</strong><small>Current and planned trips</small></article>
           </section>
 
+          <section class="money-hero" aria-label="Monthly money flow">
+            <div class="money-hero-copy">
+              <p class="hero-kicker">THE MONTH IN MOTION</p>
+              <h2>Make sense of<br><em>your money.</em></h2>
+              <p>Every little entry adds up to a clearer picture.</p>
+              <div class="hero-balance-label">Net flow this month</div>
+              <strong id="heroNetBalance">AED 0.00</strong>
+              <small id="heroTransactionPulse">No activity recorded yet</small>
+            </div>
+            <div class="money-hero-visual">
+              <div class="hero-orbit hero-orbit-one"></div>
+              <div class="hero-orbit hero-orbit-two"></div>
+              <div class="hero-chart-title"><span>DAILY ACTIVITY</span><span>Last 14 days</span></div>
+              <div class="hero-pulse-bars" id="heroPulseBars" aria-label="Daily transaction count for the last 14 days"></div>
+              <div class="hero-chart-legend"><span><i></i>Transactions</span><span id="heroActiveDays">0 active days</span></div>
+            </div>
+            <span class="hero-decoration hero-decoration-one"></span>
+            <span class="hero-decoration hero-decoration-two"></span>
+          </section>
+
           <div class="dashboard-grid">
             <div class="dashboard-primary">
               <section class="panel conversation-panel">
@@ -126,6 +146,11 @@
         <section id="page-transactions" class="page-view" hidden>
           <section class="panel page-panel">
             <div class="panel-heading"><div><p class="eyebrow">YOUR LEDGER</p><h2>All transactions</h2><p class="panel-subtitle">Search, filter and manage recorded activity.</p></div><button class="button button-primary button-small" id="addExpenseLink" type="button">＋ Add transaction</button></div>
+            <div class="transaction-summary-strip">
+              <article><small>VISIBLE ENTRIES</small><strong id="transactionVisibleCount">0</strong><span>Matching your filters</span></article>
+              <article><small>EXPENSE TOTALS</small><strong id="transactionExpenseTotal">—</strong><span>Kept separate by currency</span></article>
+              <article><small>INCOME TOTALS</small><strong id="transactionIncomeTotal">—</strong><span>Kept separate by currency</span></article>
+            </div>
             <div class="filter-grid">
               <input id="transactionSearch" type="search" placeholder="Search description or notes…" aria-label="Search transactions">
               <select id="transactionTypeFilter" aria-label="Filter by transaction type"><option value="">All types</option><option>Expense</option><option>Income</option></select>
@@ -140,6 +165,7 @@
         <section id="page-budgets" class="page-view" hidden>
           <section class="panel page-panel">
             <div class="panel-heading"><div><p class="eyebrow">PLAN WITH INTENTION</p><h2>Budgets</h2><p class="panel-subtitle">Keep an eye on your monthly category limits.</p></div><button class="button button-primary button-small" id="addBudgetLink" type="button">＋ Set a budget</button></div>
+            <div class="budget-overview-strip" id="budgetOverview"><span>Loading your budget picture…</span></div>
             <div id="budgetList" class="budget-list"><div class="empty-state">No budgets set yet.</div></div>
           </section>
         </section>
@@ -147,6 +173,7 @@
         <section id="page-trips" class="page-view" hidden>
           <section class="panel page-panel">
             <div class="panel-heading"><div><p class="eyebrow">SHARED SPENDING</p><h2>Your trips</h2><p class="panel-subtitle">Each trip has its own people, currency and expense history.</p></div><button class="button button-primary button-small" id="addTripLink" type="button">＋ Create trip</button></div>
+            <div class="trip-overview-strip" id="tripOverview"><span>Your shared journeys, all in one place.</span></div>
             <div id="tripList" class="trip-list"><div class="empty-state">Your trips will appear here.</div></div>
           </section>
         </section>
@@ -154,6 +181,10 @@
         <section id="page-reports" class="page-view" hidden>
           <section class="panel page-panel" id="reportsPanel">
             <div class="panel-heading"><div><p class="eyebrow">YOUR NUMBERS</p><h2>Reports and insights</h2><p class="panel-subtitle">Explore activity over time and export a filtered ledger.</p></div><button class="text-button" id="exportCsvButton" type="button">Export filtered CSV ↓</button></div>
+            <div class="report-intro">
+              <div class="report-intro-mark" aria-hidden="true">↗</div>
+              <div><strong>See the story behind the numbers.</strong><span>Choose a period below to explore income, spending patterns and category mix.</span></div>
+            </div>
             <div class="report-actions">
               <button class="report-button" data-report="today" type="button"><strong>Today</strong><small>Daily activity</small></button>
               <button class="report-button" data-report="week" type="button"><strong>This week</strong><small>Weekly spending</small></button>
