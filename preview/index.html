@@ -24,6 +24,7 @@
       </div>
     </header>
 
+    <div id="toastRegion" class="toast-region" role="status" aria-live="polite" aria-atomic="true"></div>
     <div class="app-body">
       <aside class="sidebar" aria-label="Main navigation">
         <p class="nav-section-label">WORKSPACE</p>
@@ -276,6 +277,17 @@
         <button class="button button-primary" type="submit" id="tripWizardSave" hidden>Create trip</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="tripDetailDialog" class="app-dialog trip-detail-dialog">
+    <div class="trip-detail-shell">
+      <div class="dialog-heading">
+        <div><p class="eyebrow">TRIP WORKSPACE</p><h2 id="tripDetailTitle">Trip details</h2></div>
+        <button class="icon-button" type="button" data-close="tripDetailDialog" aria-label="Close">×</button>
+      </div>
+      <div id="tripDetailBody" class="trip-detail-body"></div>
+      <div class="dialog-actions"><button class="button button-outline" type="button" data-close="tripDetailDialog">Close</button></div>
+    </div>
   </dialog>
 
   <dialog id="budgetDialog" class="app-dialog">
