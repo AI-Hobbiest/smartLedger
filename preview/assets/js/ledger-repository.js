@@ -16,6 +16,12 @@
     return { schemaVersion: SCHEMA_VERSION, transactions: [], trips: [], tripMembers: [], users: demoUsers(), budgets: [], updatedAt: new Date().toISOString() };
   }
   function normalizeTripMembers(trip, users, memberships) {
+    if (!memberships.some(item => item.tripId === trip.id && item.userId === "DEMO-ADMIN")) {
+      memberships.push({
+        id: makeId("TM"), tripId: trip.id, userId: "DEMO-ADMIN", tripRole: "Organizer",
+        membershipStatus: "Active", invitedByUserId: "DEMO-ADMIN", joinedAt: null, addedAt: new Date().toISOString()
+      });
+    }
     const raw = String(trip.members || trip.legacyMembers || "");
     raw.split(/[|,\n]/).map(value => value.trim()).filter(Boolean).forEach(name => {
       let user = users.find(item => item.name.toLowerCase() === name.toLowerCase());
@@ -138,6 +144,8 @@
           if (replacement) {
             retained.push({ ...existing, ...clone(replacement), id: existing.id, membershipStatus: "Active", tripId: row.id });
             selected.delete(existing.userId);
+          } else if ((existing.membershipStatus || "Active") === "Revoked") {
+            retained.push(existing);
           } else {
             retained.push({
               ...existing, membershipStatus: "Revoked", revokedAt: now,
