@@ -367,6 +367,10 @@
         .filter(item => item.tripId === tripId && (item.membershipStatus || "Active") === "Active")
         .map(item => item.userId);
       available = data.users.filter(user => memberIds.includes(user.id) && (user.status || "Active") === "Active");
+      if (selectedUserId && !available.some(user => user.id === selectedUserId)) {
+        const historicalUser = data.users.find(user => user.id === selectedUserId);
+        if (historicalUser) available.unshift({ ...historicalUser, isHistoricalParticipant: true });
+      }
     } else {
       available = isAdminPreview()
         ? data.users.filter(user => !user.isTripOnly && (user.status || "Active") === "Active")
@@ -374,7 +378,7 @@
     }
     if (!tripId && currentUser && !available.some(user => user.id === currentUser.id)) available.unshift(currentUser);
     $("txSpentByUser").innerHTML = '<option value="">Choose participant</option>' +
-      available.map(user => '<option value="' + safe(user.id) + '">' + safe(user.name) + (user.isTripOnly ? " · Trip-only" : "") + '</option>').join("");
+      available.map(user => '<option value="' + safe(user.id) + '">' + safe(user.name) + (user.isTripOnly ? " · Trip-only" : user.isHistoricalParticipant ? " · Former participant" : "") + '</option>').join("");
     const fallback = currentUser && available.some(user => user.id === currentUser.id)
       ? currentUser.id
       : (available[0] ? available[0].id : "");
