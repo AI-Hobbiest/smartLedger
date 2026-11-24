@@ -407,16 +407,24 @@
 
   function renderTripHouseholdUsers(row) {
     const existing = row ? data.tripMembers.filter(item => item.tripId === row.id) : [];
-    const users = data.users.filter(user => !user.isTripOnly && (user.status || "Active") === "Active");
+    const scopedIds = new Set(existing.map(item => item.userId));
+    const users = data.users.filter(user =>
+      (!user.isTripOnly || scopedIds.has(user.id)) && (user.status || "Active") === "Active"
+    );
     $("tripHouseholdUsers").innerHTML = users.map(user => {
       const membership = existing.find(item => item.userId === user.id);
       const checked = !!membership || (!row && currentUser && currentUser.id === user.id);
       const role = membership && membership.tripRole || (currentUser && currentUser.id === user.id ? "Organizer" : "Member");
-      return '<label class="trip-household-choice"><span><input type="checkbox" data-trip-user="' + safe(user.id) + '"' + (checked ? " checked" : "") + '> ' + safe(user.name) + '</span><select data-trip-role="' + safe(user.id) + '"' + (checked ? "" : " disabled") + '><option value="Member"' + (role === "Member" ? " selected" : "") + '>Trip Member</option><option value="Organizer"' + (role === "Organizer" ? " selected" : "") + '>Trip Organizer</option></select></label>';
+      const label = safe(user.name) + (user.isTripOnly ? " · Trip-only" : "");
+      const roleOptions = user.isTripOnly
+        ? '<option value="Member" selected>Trip Member</option>'
+        : '<option value="Member"' + (role === "Member" ? " selected" : "") + '>Trip Member</option><option value="Organizer"' + (role === "Organizer" ? " selected" : "") + '>Trip Organizer</option>';
+      const roleDisabled = !checked || user.isTripOnly;
+      return '<label class="trip-household-choice"><span><input type="checkbox" data-trip-user="' + safe(user.id) + '"' + (checked ? " checked" : "") + '> ' + label + '</span><select data-trip-role="' + safe(user.id) + '"' + (roleDisabled ? " disabled" : "") + '>' + roleOptions + '</select></label>';
     }).join("") || '<p class="wizard-help">No household users are available yet.</p>';
     $("tripHouseholdUsers").querySelectorAll("[data-trip-user]").forEach(input => input.addEventListener("change", () => {
       const role = $("tripHouseholdUsers").querySelector('[data-trip-role="' + input.dataset.tripUser + '"]');
-      if (role) role.disabled = !input.checked;
+      if (role) role.disabled = !input.checked || input.parentElement.textContent.includes("Trip-only");
     }));
   }
 
@@ -676,7 +684,7 @@
         const row = {
           id, name:$("tripName").value.trim(), destination:$("tripDestination").value.trim(), startDate, endDate,
           currency:$("tripCurrency").value || "AED", status:existing && existing.status || "Planned",
-          createdByUserId:existing && existing.createdByUserId || currentUser.id,
+          createdByUserId:existing && existing.createdByUserId || currentUser.id, updatedByUserId:currentUser.id,
           closedByUserId:existing && existing.closedByUserId || "", closedAt:existing && existing.closedAt || "",
           createdAt:existing && existing.createdAt || new Date().toISOString(), updatedAt:new Date().toISOString()
         };
