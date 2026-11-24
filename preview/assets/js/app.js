@@ -419,7 +419,9 @@
     $("tripHouseholdUsers").innerHTML = users.map(user => {
       const membership = existing.find(item => item.userId === user.id && (item.membershipStatus || "Active") === "Active");
       const checked = !!membership || (!row && currentUser && currentUser.id === user.id);
-      const role = membership && membership.tripRole || (currentUser && currentUser.id === user.id ? "Organizer" : "Member");
+      const historicalMembership = existing.find(item => item.userId === user.id);
+      const role = membership && membership.tripRole || historicalMembership && historicalMembership.tripRole ||
+        (currentUser && currentUser.id === user.id ? "Organizer" : "Member");
       const label = safe(user.name) + (user.isTripOnly ? " · Trip-only" : "");
       const roleOptions = user.isTripOnly
         ? '<option value="Member" selected>Trip Member</option>'
