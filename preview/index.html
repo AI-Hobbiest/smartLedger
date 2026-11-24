@@ -202,7 +202,7 @@
     </nav>
 
     <div class="assistant-floater">
-      <button class="assistant-launcher" id="assistantLauncher" type="button" aria-controls="assistantPanel" aria-expanded="false"><span aria-hidden="true">✦</span><span>Ask Smart Assistant</span></button>
+      <button class="assistant-launcher" id="assistantLauncher" type="button" aria-controls="assistantPanel" aria-expanded="false"><span aria-hidden="true">✦</span><span>Ask Ledger</span></button>
       <div class="assistant-panel" id="assistantPanel" hidden>
           <section class="panel conversation-panel">
             <div class="panel-heading">
@@ -213,11 +213,11 @@
               <div class="chat-message assistant"><span class="avatar">GL</span><div class="message-body"><p>Hello! Tell me what you spent or what money you received.</p><p class="example-phrase">“Spent AED 48 at Carrefour” · “My brother paid me”</p><p>I'll ask for any missing details here, then show you a draft to review before saving.</p></div></div>
             </div>
             <div class="suggestion-row">
+              <button class="suggestion" data-prompt="Add an expense" type="button">Add expense</button>
               <button class="suggestion" data-prompt="Show my spending this month" type="button">This month</button>
               <button class="suggestion" data-prompt="Show today's expenses" type="button">Today</button>
               <button class="suggestion" data-prompt="Show this week's spending" type="button">This week</button>
               <button class="suggestion" data-prompt="Show trip expenses" type="button">Trip summary</button>
-              <button class="suggestion" data-prompt="Add an expense" type="button">Add expense</button>
             </div>
             <form id="chatForm" class="chat-entry"><label class="sr-only" for="chatInput">Type a message</label><input id="chatInput" autocomplete="off" placeholder="Tell me what you spent, received or want to know…" maxlength="500"><button class="send-button" aria-label="Send message" type="submit">➤</button></form>
             <p class="micro-note">Review every transaction before saving. No hosted AI service is required for basic entry.</p>
