@@ -6,6 +6,7 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const html = fs.readFileSync(path.join(root, "preview/index.html"), "utf8");
 const app = fs.readFileSync(path.join(root, "preview/assets/js/app.js"), "utf8");
+const css = fs.readFileSync(path.join(root, "preview/assets/css/app.css"), "utf8");
 
 test("redesigned navigation has a matching destination for every workspace view", () => {
   const targets = [...html.matchAll(/data-nav-target="([^"]+)"/g)].map(match => match[1]);
