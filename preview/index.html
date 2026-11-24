@@ -72,6 +72,26 @@
         </div>
 
         <section id="page-overview" class="page-view">
+          <section class="panel conversation-panel">
+            <div class="panel-heading">
+              <div><p class="eyebrow">SMART ASSISTANT</p><h2>Talk to your ledger</h2><p class="panel-subtitle">Add an expense or ask a question in your own words.</p></div>
+              <div class="conversation-tools"><span class="engine-label">Chat-first entry</span><button class="text-button" id="manualTransactionEntry" type="button">Manual entry</button></div>
+            </div>
+            <div class="chat-stream" id="chatStream" aria-live="polite">
+              <div class="chat-message assistant"><span class="avatar">GL</span><div class="message-body"><p>Hello! Tell me what you spent or what money you received.</p><p class="example-phrase">“Spent AED 48 at Carrefour” · “My brother paid me”</p><p>I'll ask for any missing details here, then show you a draft to review before saving.</p></div></div>
+            </div>
+            <div class="suggestion-row">
+              <button class="suggestion" data-prompt="Show my spending this month" type="button">This month</button>
+              <button class="suggestion" data-prompt="Show today's expenses" type="button">Today</button>
+              <button class="suggestion" data-prompt="Show this week's spending" type="button">This week</button>
+              <button class="suggestion" data-prompt="Show trip expenses" type="button">Trip summary</button>
+              <button class="suggestion" data-prompt="Add an expense" type="button">Add expense</button>
+            </div>
+            <form id="chatForm" class="chat-entry"><label class="sr-only" for="chatInput">Type a message</label><input id="chatInput" autocomplete="off" placeholder="Tell me what you spent, received or want to know…" maxlength="500"><button class="send-button" aria-label="Send message" type="submit">➤</button></form>
+            <p class="micro-note">Review every transaction before saving. No hosted AI service is required for basic entry.</p>
+          </section>
+
+
           <section class="stats-grid" aria-label="Financial overview">
             <article class="stat-card stat-expense"><div class="stat-top"><span>Expenses this month</span><span class="stat-icon">↘</span></div><strong id="monthSpend">AED 0.00</strong><small id="monthSpendHint">No expenses yet</small></article>
             <article class="stat-card stat-income"><div class="stat-top"><span>Income this month</span><span class="stat-icon">↗</span></div><strong id="monthIncome">AED 0.00</strong><small id="monthIncomeHint">No income yet</small></article>
@@ -101,25 +121,6 @@
 
           <div class="dashboard-grid">
             <div class="dashboard-primary">
-              <section class="panel conversation-panel">
-                <div class="panel-heading">
-                  <div><p class="eyebrow">SMART ASSISTANT</p><h2>Talk to your ledger</h2><p class="panel-subtitle">Add an expense or ask a question in your own words.</p></div>
-                  <div class="conversation-tools"><span class="engine-label">Chat-first entry</span><button class="text-button" id="manualTransactionEntry" type="button">Manual entry</button></div>
-                </div>
-                <div class="chat-stream" id="chatStream" aria-live="polite">
-                  <div class="chat-message assistant"><span class="avatar">GL</span><div class="message-body"><p>Hello! Tell me what you spent or what money you received.</p><p class="example-phrase">“Spent AED 48 at Carrefour” · “My brother paid me”</p><p>I'll ask for any missing details here, then show you a draft to review before saving.</p></div></div>
-                </div>
-                <div class="suggestion-row">
-                  <button class="suggestion" data-prompt="Show my spending this month" type="button">This month</button>
-                  <button class="suggestion" data-prompt="Show today's expenses" type="button">Today</button>
-                  <button class="suggestion" data-prompt="Show this week's spending" type="button">This week</button>
-                  <button class="suggestion" data-prompt="Show trip expenses" type="button">Trip summary</button>
-                  <button class="suggestion" data-prompt="Add an expense" type="button">Add expense</button>
-                </div>
-                <form id="chatForm" class="chat-entry"><label class="sr-only" for="chatInput">Type a message</label><input id="chatInput" autocomplete="off" placeholder="Tell me what you spent, received or want to know…" maxlength="500"><button class="send-button" aria-label="Send message" type="submit">➤</button></form>
-                <p class="micro-note">Review every transaction before saving. No hosted AI service is required for basic entry.</p>
-              </section>
-
               <section class="panel shortcuts-panel">
                 <div class="panel-heading"><div><p class="eyebrow">QUICK ACTIONS</p><h2>Make a move</h2></div></div>
                 <div class="quick-actions">
