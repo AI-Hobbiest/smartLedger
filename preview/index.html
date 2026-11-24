@@ -17,6 +17,7 @@
         <span><span class="eyebrow">GANATHE FINANCE</span><strong>Smart Ledger</strong></span>
       </a>
       <div class="header-actions">
+        <label class="dev-identity-switch">Preview as <select id="demoIdentitySelect" aria-label="Switch development preview identity"></select></label>
         <span id="syncStatus" class="sync-pill" data-state="local"><span class="sync-dot"></span><span id="syncText">Development data · this browser</span></span>
         <button class="button button-outline button-small" id="exportBackupButton" type="button">Export backup</button>
         <button class="button button-outline button-small" id="importBackupButton" type="button">Import backup</button>
@@ -123,6 +124,7 @@
         <label>Category<select id="txCategory" name="category"></select></label>
         <label>Payment type<select id="txPayment" name="paymentType"><option>Cash</option><option>Debit Card</option><option>Credit Card</option><option>Bank Transfer</option><option>Digital Wallet</option><option>Other</option></select></label>
         <label>Paid by<input id="txPaidBy" name="paidBy" value="Me" maxlength="60" required></label>
+        <label>Spent by (user)<select id="txSpentByUser" name="spentByUserId"></select></label>
         <label>Trip (optional)<select id="txTrip" name="tripId"><option value="">Personal / non-trip</option></select></label>
         <label class="span-2">Notes<input id="txNotes" name="notes" maxlength="300" placeholder="Optional"></label>
       </div>
@@ -130,18 +132,41 @@
     </form>
   </dialog>
 
-  <dialog id="tripDialog" class="app-dialog">
+  <dialog id="tripDialog" class="app-dialog trip-wizard-dialog">
     <form id="tripForm"><input id="tripId" type="hidden">
-      <div class="dialog-heading"><div><p class="eyebrow">TRIP PLANNER</p><h2 id="tripDialogTitle">Create a trip</h2></div><button class="icon-button" type="button" data-close="tripDialog" aria-label="Close">×</button></div>
-      <div class="form-grid">
-        <label class="span-2">Trip name<input id="tripName" name="name" required maxlength="100" placeholder="e.g. Oman trip"></label>
-        <label class="span-2">Destination<input id="tripDestination" name="destination" maxlength="100" placeholder="e.g. Muscat and Chennai"></label>
-        <label>Start date<input id="tripStart" name="startDate" type="date"></label>
-        <label>End date<input id="tripEnd" name="endDate" type="date"></label>
-        <label class="span-2">Participants<input id="tripMembers" name="members" placeholder="Names separated by commas"></label>
-        <label>Status<select id="tripStatus"><option>Planned</option><option>Active</option><option>Completed</option><option>Cancelled</option></select></label>
+      <div class="dialog-heading"><div><p class="eyebrow">ADMIN TRIP WIZARD</p><h2 id="tripDialogTitle">Create a trip</h2></div><button class="icon-button" type="button" data-close="tripDialog" aria-label="Close">×</button></div>
+      <div class="trip-wizard-progress"><span id="tripWizardProgress">Step 1 of 3 · Trip details</span><div><i id="tripWizardProgressFill"></i></div></div>
+      <section class="trip-wizard-page" data-trip-step="1">
+        <div class="form-grid">
+          <label class="span-2">Trip name<input id="tripName" name="name" required maxlength="100" placeholder="e.g. Oman family trip"></label>
+          <label class="span-2">Destination / places<input id="tripDestination" name="destination" maxlength="160" placeholder="e.g. Muscat, Nizwa and Chennai"></label>
+          <label>Start date<input id="tripStart" name="startDate" type="date"></label>
+          <label>End date<input id="tripEnd" name="endDate" type="date"></label>
+        </div>
+      </section>
+      <section class="trip-wizard-page" data-trip-step="2" hidden>
+        <div class="form-grid">
+          <label>Default trip currency<select id="tripCurrency"><option>AED</option><option>INR</option><option>OMR</option><option>USD</option><option>SGD</option><option>EUR</option><option>GBP</option></select></label>
+        </div>
+        <div id="tripParticipantAdminArea">
+          <h3 class="wizard-subheading">Household users</h3>
+          <p class="wizard-help">Select existing users and assign their role for this trip.</p>
+          <div id="tripHouseholdUsers" class="trip-household-users"></div>
+          <h3 class="wizard-subheading">Trip-only participants</h3>
+          <p class="wizard-help">Add people who need expense attribution but do not need an app login. Enter one name per line.</p>
+          <label class="trip-only-field">Names<textarea id="tripOnlyNames" rows="3" placeholder="e.g. Uncle Ravi&#10;Aunt Meera"></textarea></label>
+        </div>
+        <p id="tripMembershipReadOnlyNote" class="wizard-help" hidden>Only the Household Admin can change trip participants and roles.</p>
+      </section>
+      <section class="trip-wizard-page" data-trip-step="3" hidden>
+        <div id="tripWizardReview" class="trip-wizard-review"></div>
+      </section>
+      <div class="dialog-actions trip-wizard-actions">
+        <button class="button button-outline" type="button" id="tripWizardBack">Back</button>
+        <button class="button button-outline" type="button" data-close="tripDialog">Cancel</button>
+        <button class="button button-primary" type="button" id="tripWizardNext">Continue</button>
+        <button class="button button-primary" type="submit" id="tripWizardSave" hidden>Create trip</button>
       </div>
-      <div class="dialog-actions"><button class="button button-outline" type="button" data-close="tripDialog">Cancel</button><button class="button button-primary" type="submit">Save trip</button></div>
     </form>
   </dialog>
 
@@ -160,6 +185,7 @@
 
   <script defer src="./assets/js/ledger-core.js"></script>
   <script defer src="./assets/js/ledger-repository.js"></script>
+  <script defer src="./assets/js/ledger-authz.js"></script>
   <script defer src="./assets/js/app.js"></script>
 </body>
 </html>
