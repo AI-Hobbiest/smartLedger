@@ -1,6 +1,6 @@
 # Smart Ledger — UI Redesign Direction
 
-**Status:** UI-1 foundation merged; UI-2 / UI-3 visual and interaction refinements in review.  
+**Status:** UI-1, UI-2 and UI-3 merged; automated UI regression suite passed. UI-4 manual visual / device acceptance remains.  
 **Reference review date:** 24 November 2026.
 
 ## 1. Product direction
@@ -102,9 +102,9 @@ No plain white-and-green palette as the product's primary identity. Green may ap
 ## 7. Delivery phases
 
 1. **UI-1 — Foundation (merged):** new app shell, responsive navigation, design tokens, separate destinations and initial overview.
-2. **UI-2 — Screen refinement (in progress):** signature visual identity, data-rich overview, date-grouped transactions, budget cards, trip cards and report visualisation.
-3. **UI-3 — Interaction polish:** native-feeling mobile transaction sheet, trip details, calendar / period toggles, chart drill-down, empty / loading / error / success feedback and optional dark mode.
-4. **UI-4 — Quality and acceptance:** desktop, iPhone, iPad and Android responsive review; keyboard and accessibility checks; role-based regression; PWA install and offline smoke tests.
+2. **UI-2 — Screen refinement (implemented):** signature visual identity, data-rich overview, date-grouped transactions, budget cards, trip cards and report visualisation.
+3. **UI-3 — Interaction polish (implemented):** mobile bottom-sheet forms, trip details, budget / report category drill-down, contextual success / error toasts, accessible focus and reduced-motion support. Calendar / period toggles and optional dark mode remain future enhancements.
+4. **UI-4 — Quality and acceptance:** automated CI passed with 72 tests (including 14 UI-specific checks). Remaining manual sign-off: desktop, iPhone, iPad and Android rendering; VoiceOver / keyboard accessibility; PWA install and offline smoke tests.
 
 ## 8. Guardrails and deferred work
 
