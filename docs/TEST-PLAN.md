@@ -1,36 +1,43 @@
-# Test Plan — Initial
+# Test Plan — Smart Ledger
 
-## Repository and PWA
+## PWA and device experience
 - [ ] GitHub Pages serves the app over HTTPS.
-- [ ] App shell loads on desktop and mobile widths.
-- [ ] Manifest is valid and install prompt is available where supported.
-- [ ] Service worker installs, updates and serves cached shell.
-- [ ] Offline state is clearly distinguished from synced state.
+- [ ] App shell loads at desktop and mobile widths.
+- [ ] Installable PWA shell and offline state are clear.
+- [ ] Persistent device sign-in renews silently in supported production identity flow.
+- [ ] Sign-out, revocation and account switching are tested.
+- [ ] Biometrics/passkeys are optional and never requested per transaction.
 
-## Data and calculations
+## Schema and data
+- [x] Schema v1 to v2 migration preserves transactions and converts legacy trip participant names to trip-only memberships.
 - [ ] Base-currency transaction uses FX rate 1.
-- [ ] Foreign-currency transaction stores an immutable FX snapshot.
-- [ ] BaseAmount calculation and rounding are tested.
-- [ ] Income and expense totals are separated correctly.
-- [ ] Budget period, scope and category calculations are correct.
+- [ ] Foreign-currency transaction stores immutable FX snapshot.
+- [ ] Historical base amounts do not change when exchange rates move.
+- [ ] Transaction spender and recorder remain distinct.
 
-## Family and trip workflows
-- [ ] Self-entry attributes both user IDs to the same member.
-- [ ] Proxy entry records spender and recorder separately.
-- [ ] Trip member access is restricted to permitted records.
-- [ ] Family-head visibility is tested independently from member visibility.
-
-## OneDrive proof of concept (release gate)
-- [ ] Microsoft personal account sign-in works.
-- [ ] Workbook can be located and downloaded.
-- [ ] Workbook can be edited and uploaded without corrupting formatting or validation.
-- [ ] eTag/version check detects a concurrent change.
-- [ ] Stale update is rejected and user can reload/retry.
-- [ ] Two-user concurrent edit test produces no lost updates.
-- [ ] Interrupted upload and recovery are tested.
-- [ ] No workbook data or tokens are written to GitHub.
+## Household and trip authorization
+- [x] Only Household Admin can create and close trips.
+- [x] Household Member cannot view an unrelated trip.
+- [x] Household Member sees only own personal transactions plus active joined-trip transactions.
+- [x] Organizer can edit all transactions in their open trip.
+- [x] Member can edit/delete only transactions they recorded.
+- [x] Closed trips are read-only, including for Admin.
+- [x] Trip-only participant does not gain access without an active signed-in household identity.
+- [ ] Admin trip wizard maps existing users and adds trip-only participants.
+- [ ] Membership revocation removes trip visibility.
+- [ ] Reports, search, chat and exports apply the same visible-row filter.
+- [ ] Every server operation enforces the policy; browser checks are not relied upon for security.
 
 ## Reports
 - [ ] Daily, weekly, monthly and quarterly totals reconcile to transactions.
-- [ ] Trip report reconciles to trip-linked transactions.
-- [ ] Export output matches on-screen totals.
+- [ ] Trip report reconciles to permitted trip-linked transactions.
+- [ ] CSV/export output matches the permitted on-screen rows.
+
+## OneDrive proof of concept (release gate)
+- [ ] Personal account sign-in works.
+- [ ] Workbook download/edit/upload preserve formatting and validation.
+- [ ] eTag/version detects concurrent change.
+- [ ] Stale updates rejected with reload/retry.
+- [ ] Two-user concurrent edit creates no lost updates.
+- [ ] Interrupted upload and recovery tested.
+- [ ] No workbook data or tokens written to GitHub.
