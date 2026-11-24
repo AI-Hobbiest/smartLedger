@@ -128,12 +128,30 @@
       if (index < 0) throw new Error("Trip not found. Refresh and try again.");
       data.trips[index] = clone({ ...row, currency: row.currency || "AED" });
       if (memberships !== undefined) {
-        data.tripMembers = data.tripMembers.filter(item => item.tripId !== row.id);
         (newUsers || []).forEach(user => { if (!data.users.some(item => item.id === user.id)) data.users.push(clone(user)); });
-        memberships.forEach(member => {
-          if (data.tripMembers.some(item => item.tripId === row.id && item.userId === member.userId)) throw new Error("A participant has been assigned to this trip more than once.");
-          data.tripMembers.push(clone({ ...member, tripId: row.id }));
+        const selected = new Map(memberships.map(member => [member.userId, member]));
+        const now = new Date().toISOString();
+        const retained = [];
+        data.tripMembers.forEach(existing => {
+          if (existing.tripId !== row.id) { retained.push(existing); return; }
+          const replacement = selected.get(existing.userId);
+          if (replacement) {
+            retained.push({ ...existing, ...clone(replacement), id: existing.id, membershipStatus: "Active", tripId: row.id });
+            selected.delete(existing.userId);
+          } else {
+            retained.push({
+              ...existing, membershipStatus: "Revoked", revokedAt: now,
+              revokedByUserId: row.updatedByUserId || row.createdByUserId || ""
+            });
+          }
         });
+        selected.forEach(member => retained.push(clone({ ...member, tripId: row.id })));
+        const activeIds = new Set();
+        retained.filter(item => item.tripId === row.id && item.membershipStatus === "Active").forEach(item => {
+          if (activeIds.has(item.userId)) throw new Error("A participant has been assigned to this trip more than once.");
+          activeIds.add(item.userId);
+        });
+        data.tripMembers = retained;
       }
       return this.write(data);
     }
