@@ -269,7 +269,7 @@ function renderDashboardPulse(monthRows, balance) {
       const dates = [trip.startDate, trip.endDate].filter(Boolean);
       const dateLabel = dates.length === 2 ? dates.join(" → ") : dates[0] || "Dates not set";
       const status = trip.status || "Planned";
-      const role = authz.getMembership ? authz.getMembership(currentUser, trip.id, data.tripMembers) : null;
+      const role = authz.getMembership ? authz.getMembership(currentUser, trip, data.tripMembers) : null;
       return '<article class="trip-item trip-tone-' + (index % 4) + '"><div class="trip-card-top"><span class="trip-card-icon">✈</span><span class="trip-badge" data-status="' + safe(status) + '">' + safe(status) + '</span></div><div><strong>' + safe(trip.name) + '</strong><small>' + safe(trip.destination || "Destination not set") + '</small><small>' + safe(dateLabel) + ' · ' + safe(trip.currency || "AED") + '</small></div><div class="trip-card-metrics"><div><small>TRIP SPENDING</small><strong>' + safe(formatTotals(totals(linked))) + '</strong></div><div><small>EXPENSE ENTRIES</small><strong>' + linked.length + '</strong></div></div><div class="trip-card-footer"><span class="trip-participant-count">' + tripMembers.length + ' active member' + (tripMembers.length === 1 ? '' : 's') + (role && role.tripRole ? ' · You are ' + safe(role.tripRole) : '') + '</span><span class="trip-actions">' + actions + '</span></div></article>';
     }).join("");
     host.querySelectorAll("[data-edit-trip]").forEach(button => button.addEventListener("click", () => {
