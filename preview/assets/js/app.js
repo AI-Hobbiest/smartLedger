@@ -557,7 +557,7 @@
   async function exportBackup() {
     if (!isAdminPreview()) throw new Error("Only the Household Admin can export the complete development backup.");
     const snapshot = await repository.readSnapshot();
-    const payload = { application: "Ganathe Finance / Smart Ledger", schemaVersion: 1, exportedAt: new Date().toISOString(), ...snapshot };
+    const payload = { application: "Ganathe Finance / Smart Ledger", schemaVersion: 2, exportedAt: new Date().toISOString(), ...snapshot };
     downloadFile("GanatheFinance-DEV-backup-" + today() + ".json", JSON.stringify(payload, null, 2), "application/json");
     addChat("Development backup exported. It is not encrypted; keep it as test data only.", "assistant");
   }
@@ -605,6 +605,21 @@
     setStatus("Development data · this browser", "local");
     try { await loadData(); } catch (error) { showError(error); }
 
+    $("tripWizardNext").addEventListener("click", () => {
+      if (tripWizardStep === 1) {
+        const start = $("tripStart").value, end = $("tripEnd").value;
+        if (!$("tripName").value.trim()) { addChat("Enter a trip name before continuing.", "assistant"); $("tripName").focus(); return; }
+        if (start && end && start > end) { addChat("Trip end date must be on or after the start date.", "assistant"); $("tripEnd").focus(); return; }
+      }
+      setTripWizardStep(tripWizardStep + 1);
+    });
+    $("tripWizardBack").addEventListener("click", () => setTripWizardStep(tripWizardStep - 1));
+    $("txTrip").addEventListener("change", () => {
+      const trip = data.trips.find(item => item.id === $("txTrip").value);
+      if (!$("txId").value && trip) $("txCurrency").value = trip.currency || "AED";
+      populateSpentBySelect($("txSpentByUser").value || (currentUser && currentUser.id));
+    });
+
     document.querySelectorAll("[data-action]").forEach(button => button.addEventListener("click", () => {
       const action = button.dataset.action;
       if (action === "expense") startQuickTransaction("Expense");
@@ -636,9 +651,15 @@
           id, date:$("txDate").value, type:$("txType").value, description:$("txDescription").value.trim(),
           amount:core.normalizeAmount($("txAmount").value), currency:$("txCurrency").value, category:$("txCategory").value,
           paymentType:$("txPayment").value, paidBy:$("txPaidBy").value.trim(), tripId:$("txTrip").value,
+          spentByUserId:$("txSpentByUser").value, recordedByUserId:existing && existing.recordedByUserId || currentUser.id,
           notes:$("txNotes").value.trim(), createdAt:existing && existing.createdAt || new Date().toISOString(), updatedAt:new Date().toISOString()
         };
-        if (!row.date || !row.description || !row.paidBy) throw new Error("Complete the date, description and paid-by fields.");
+        if (!row.date || !row.description || !row.paidBy || !row.spentByUserId) throw new Error("Complete the date, description, paid-by and spender fields.");
+        if (existing) {
+          if (!authz.canEditTransaction(currentUser, existing, data.trips, data.tripMembers)) throw new Error("You do not have permission to edit this transaction.");
+        } else if (!authz.canCreateTransaction(currentUser, row, data.trips, data.tripMembers)) {
+          throw new Error("You do not have permission to add a transaction to this scope.");
+        }
         if (existing) await repository.updateTransaction(row); else await repository.createTransaction(row);
         $("transactionDialog").close(); await loadData(); addChat(existing ? "Transaction updated." : "Transaction saved to the development ledger.", "assistant");
       } catch (error) { showError(error); }
@@ -648,16 +669,29 @@
       event.preventDefault();
       try {
         const id = $("tripId").value || core.makeId("TR"), existing = data.trips.find(row => row.id === id);
+        if (existing && !authz.canEditTripDetails(currentUser, existing, data.tripMembers)) throw new Error("You do not have permission to edit this trip.");
+        if (!existing && !authz.canCreateTrip(currentUser)) throw new Error("Only the Household Admin can create a trip.");
         const startDate = $("tripStart").value, endDate = $("tripEnd").value;
         if (startDate && endDate && startDate > endDate) throw new Error("Trip end date must be on or after the start date.");
         const row = {
-          id, name:$("tripName").value.trim(), destination:$("tripDestination").value.trim(), startDate,endDate,
-          members:$("tripMembers").value.split(",").map(value=>value.trim()).filter(Boolean).join(" | "),
-          status:$("tripStatus").value, createdAt:existing && existing.createdAt || new Date().toISOString(), updatedAt:new Date().toISOString()
+          id, name:$("tripName").value.trim(), destination:$("tripDestination").value.trim(), startDate, endDate,
+          currency:$("tripCurrency").value || "AED", status:existing && existing.status || "Planned",
+          createdByUserId:existing && existing.createdByUserId || currentUser.id,
+          closedByUserId:existing && existing.closedByUserId || "", closedAt:existing && existing.closedAt || "",
+          createdAt:existing && existing.createdAt || new Date().toISOString(), updatedAt:new Date().toISOString()
         };
         if (!row.name) throw new Error("Enter a trip name.");
-        if (existing) await repository.updateTrip(row); else await repository.createTrip(row);
-        $("tripDialog").close(); await loadData(); addChat(existing ? "Trip updated." : "Trip created. Attach expenses to it when recording them.", "assistant");
+        const canManageMembers = authz.canManageTripMembers(currentUser, existing || { status: "Planned" });
+        if (canManageMembers) {
+          const selection = selectedTripMembers(id);
+          if (existing) await repository.updateTrip(row, selection.members, selection.newUsers);
+          else await repository.createTrip(row, selection.members, selection.newUsers);
+        } else {
+          await repository.updateTrip(row);
+        }
+        $("tripDialog").close();
+        await loadData();
+        addChat(existing ? "Trip details updated." : "Trip created. Add expenses to it when recording trip spending.", "assistant");
       } catch (error) { showError(error); }
     });
 
