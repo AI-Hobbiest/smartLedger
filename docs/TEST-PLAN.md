@@ -22,7 +22,10 @@
 - [x] Organizer can edit all transactions in their open trip.
 - [x] Member can edit/delete only transactions they recorded.
 - [x] Closed trips are read-only, including for Admin.
-- [x] Trip-only participant does not gain access without an active signed-in household identity.
+- [x] Trip-only participant does not gain app access, even when linked to an active trip membership.
+- [x] Trip expense attribution is restricted to current trip participants.
+- [x] Transaction scope moves are re-authorized against the destination trip.
+- [x] Revocation history is retained when the roster is edited repeatedly.
 - [ ] Admin trip wizard maps existing users and adds trip-only participants.
 - [ ] Membership revocation removes trip visibility.
 - [ ] Reports, search, chat and exports apply the same visible-row filter.
