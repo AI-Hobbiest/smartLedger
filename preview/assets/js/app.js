@@ -133,10 +133,13 @@
     });
     const currencyGroups = Object.entries(byCurrency);
     categoriesHost.innerHTML = currencyGroups.length ? currencyGroups.map(([currency, categoryTotals]) => {
-      const entries = Object.entries(categoryTotals).sort((a,b) => b[1] - a[1]).slice(0,5);
+      const entries = Object.entries(categoryTotals).sort((a,b) => b[1] - a[1]);
       const total = entries.reduce((sum, item) => sum + item[1], 0);
+      const shown = entries.slice(0,5);
+      const remainder = entries.slice(5).reduce((sum, item) => sum + item[1], 0);
+      if (remainder > 0) shown.push(["Other categories", remainder]);
       return '<div class="category-currency-group"><div class="category-currency-heading"><span>' + safe(currency) + ' spending</span><small>' + safe(money(total, currency)) + '</small></div>' +
-        entries.map(([category, amount]) => '<div class="category-line"><div class="category-line-top"><span>' + safe(category) + '</span><strong>' + safe(money(amount, currency)) + '</strong></div><div class="category-line-track"><span style="width:' + (total > 0 ? (amount / total * 100) : 0).toFixed(1) + '%"></span></div></div>').join("") +
+        shown.map(([category, amount]) => '<div class="category-line"><div class="category-line-top"><span>' + safe(category) + '</span><strong>' + safe(money(amount, currency)) + '</strong></div><div class="category-line-track"><span style="width:' + (total > 0 ? (amount / total * 100) : 0).toFixed(1) + '%"></span></div></div>').join("") +
       '</div>';
     }).join("") : '<div class="empty-state">No expenses recorded this month yet.</div>';
 
