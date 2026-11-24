@@ -256,7 +256,7 @@ footer{padding:26px 0 4px;color:#a2aca5;font-size:9px;text-align:left}
   .mobile-nav-add>span{width:37px;height:32px;display:grid;place-items:center;border-radius:12px;background:#187b68;color:#fff;font-size:22px;line-height:1;box-shadow:0 5px 12px rgba(24,123,104,.22)}
   .mobile-nav-add small{margin-top:2px}
   .header-add-button{display:none!important}
-  .app-shell-redesigned .backup-actions{display:none}
+  .app-shell-redesigned .topbar .backup-actions{display:none}
   .app-shell-redesigned .sync-pill{display:none}
   .view-heading{margin-bottom:17px}
   .page-panel{padding:16px}
@@ -311,3 +311,9 @@ footer{padding:26px 0 4px;color:#a2aca5;font-size:9px;text-align:left}
 @media(prefers-reduced-motion:reduce){
   .nav-item,.quick-action{transition:none}
 }
+
+.app-shell-redesigned .mobile-nav-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.backup-panel{margin-top:14px}
+.backup-panel .panel-heading{margin-bottom:12px}
+.backup-panel .backup-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:820px){.backup-panel .backup-actions{display:flex}}
