@@ -49,11 +49,11 @@ test("closed trips are read-only, including for Admin", () => {
   const closed = { id: "T1", status: "Closed" };
   const row = { id: "E1", tripId: "T1", spentByUserId: "M", recordedByUserId: "M" };
   assert.equal(authz.canCloseTrip(admin, closed), false);
-  assert.equal(authz.canCreateTransaction(admin, { tripId: "T1" }, [closed], memberships), false);
+  assert.equal(authz.canCreateTransaction(admin, { tripId: "T1", spentByUserId: "M" }, [closed], memberships), false);
   assert.equal(authz.canEditTransaction(admin, row, [closed], memberships), false);
 });
 
-test("trip-only participants do not gain access without active trip membership", () => {
+test("trip-only attribution records never gain app access, even with trip membership", () => {
   const guest = { id: "G", householdRole: "TripOnly", status: "Active", isTripOnly: true };
   const guestMembership = [{ id: "G1", tripId: "T1", userId: "G", tripRole: "Member", membershipStatus: "Active" }];
   assert.equal(authz.canViewTrip(guest, trips[0], guestMembership), false);
@@ -75,8 +75,9 @@ test("schema v1 migration preserves rows and converts old names into trip-only m
   assert.equal(migrated.transactions.length, 1);
   assert.equal(migrated.transactions[0].recordedByUserId, "DEMO-ADMIN");
   assert.equal(migrated.trips[0].currency, "AED");
-  assert.equal(migrated.tripMembers.length, 2);
+  assert.equal(migrated.tripMembers.length, 3);
   assert.equal(migrated.users.filter(user => user.isTripOnly).length, 2);
+  assert.ok(migrated.tripMembers.some(item => item.userId === "DEMO-ADMIN" && item.tripRole === "Organizer"));
 });
 
 test("removing a participant revokes membership without deleting its audit record", async () => {
@@ -96,4 +97,39 @@ test("removing a participant revokes membership without deleting its audit recor
   assert.equal(updated.tripMembers.length, 1);
   assert.equal(updated.tripMembers[0].membershipStatus, "Revoked");
   assert.equal(updated.tripMembers[0].revokedByUserId, "A");
+});
+
+test("trip expense attribution is restricted to active trip participants", () => {
+  assert.equal(authz.canCreateTransaction(admin, { tripId: "T1", spentByUserId: "O" }, trips, memberships), true);
+  assert.equal(authz.canCreateTransaction(admin, { tripId: "T1", spentByUserId: "A" }, trips, memberships), false);
+  assert.equal(authz.canCreateTransaction(member, { tripId: "T1", spentByUserId: "M" }, trips, memberships), true);
+  assert.equal(authz.canCreateTransaction(member, { tripId: "T2", spentByUserId: "M" }, trips, memberships), false);
+});
+
+test("a member cannot move an existing personal transaction into an unrelated trip", () => {
+  const personal = { id: "P-1", spentByUserId: "M", recordedByUserId: "M" };
+  assert.equal(authz.canEditTransaction(member, personal, trips, memberships), true);
+  assert.equal(authz.canCreateTransaction(member, { ...personal, tripId: "T2" }, trips, memberships), false);
+});
+
+test("revocation timestamp and actor are retained when a trip is edited again", async () => {
+  const memory = new Map();
+  const storage = { getItem: key => memory.get(key) || null, setItem: (key, value) => memory.set(key, value) };
+  memory.set("membership-ledger-audit", JSON.stringify({
+    schemaVersion: 2,
+    transactions: [],
+    trips: [{ id: "T-KEEP", name: "Keep audit", status: "Planned", currency: "AED" }],
+    tripMembers: [{ id: "TM-KEEP", tripId: "T-KEEP", userId: "M", tripRole: "Member", membershipStatus: "Active" }],
+    users: [{ id: "M", name: "Member", householdRole: "HouseholdMember", status: "Active", isTripOnly: false }],
+    budgets: []
+  }));
+  const repo = repositoryModule.create({ key: "membership-ledger-audit", storage });
+  const trip = { id: "T-KEEP", name: "Keep audit", status: "Planned", currency: "AED", updatedByUserId: "A" };
+  await repo.updateTrip(trip, [], []);
+  const first = (await repo.readSnapshot()).tripMembers[0];
+  await repo.updateTrip(trip, [], []);
+  const second = (await repo.readSnapshot()).tripMembers[0];
+  assert.equal(second.membershipStatus, "Revoked");
+  assert.equal(second.revokedByUserId, "A");
+  assert.equal(second.revokedAt, first.revokedAt);
 });

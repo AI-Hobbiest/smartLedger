@@ -37,10 +37,10 @@
     if (!transaction.tripId) return isAdmin(user) || transaction.spentByUserId === user.id;
     const trip = (trips || []).find(item => item.id === transaction.tripId);
     if (!isTripOpen(trip)) return false;
+    const spenderId = transaction.spentByUserId || user.id;
+    if (!getMembership({ id: spenderId }, trip, memberships)) return false;
     if (isAdmin(user)) return true;
-    if (!getMembership(user, trip, memberships)) return false;
-    return !transaction.spentByUserId ||
-      !!getMembership({ id: transaction.spentByUserId }, trip, memberships);
+    return !!getMembership(user, trip, memberships);
   }
   function canEditTransaction(user, transaction, trips, memberships) {
     if (!canViewTransaction(user, transaction, trips, memberships)) return false;
