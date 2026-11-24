@@ -127,16 +127,24 @@ test("mobile sheet styling respects safe areas and reduced-motion preferences", 
 });
 
 
-test("mobile dashboard places the chat composer before financial summary cards", () => {
-  const overview = html.slice(html.indexOf('id="page-overview"'));
-  assert.ok(overview.indexOf('class="panel conversation-panel"') < overview.indexOf('class="stats-grid"'));
-  assert.match(overview, /id="chatForm"/);
-  assert.match(overview, /id="chatInput"/);
+test("Smart Assistant is a floating panel outside the dashboard flow", () => {
+  assert.match(html, /id="assistantLauncher"/);
+  assert.match(html, /id="assistantPanel"/);
+  assert.match(html, /id="assistantClose"/);
+  assert.match(html, /id="chatForm"/);
+  assert.match(html, /id="chatInput"/);
+  const overview = html.slice(html.indexOf('id="page-overview"'), html.indexOf('id="page-transactions"'));
+  assert.doesNotMatch(overview, /class="panel conversation-panel"/);
+  assert.match(app, /function setAssistantOpen\(open\)/);
+  assert.match(app, /assistantLauncher\.setAttribute\("aria-expanded", String\(open\)\)/);
+  assert.match(app, /event\.key === "Escape"/);
 });
 
-test("mobile typography uses readable minimum sizes for chat and dashboard labels", () => {
-  assert.match(css, /\.message-body\{font-size:14px;line-height:1\.5\}/);
-  assert.match(css, /\.chat-entry input\{min-width:0;font-size:15px\}/);
-  assert.match(css, /\.stat-top\{font-size:12px;line-height:1\.3\}/);
-  assert.match(css, /\.development-banner\{font-size:12px;line-height:1\.5/);
+test("floating assistant and second-pass mobile typography remain readable", () => {
+  assert.match(css, /\.assistant-launcher\{position:fixed/);
+  assert.match(css, /\.assistant-panel\{position:fixed/);
+  assert.match(css, /\.assistant-panel \.message-body\{font-size:15px\}/);
+  assert.match(css, /\.assistant-panel \.chat-entry input\{font-size:16px\}/);
+  assert.match(css, /\.development-banner\{font-size:13px/);
+  assert.match(css, /\.transaction-list,.dashboard-recent-list,.budget-list,.trip-list\{font-size:14px\}/);
 });
