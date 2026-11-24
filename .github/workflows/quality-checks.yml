@@ -28,4 +28,4 @@ jobs:
           node --check preview/assets/js/ledger-authz.js
           node --check preview/assets/js/app.js
       - name: Run finance conversation scenarios
-        run: node --test tests/context-engine.test.cjs tests/intent-adapter.test.cjs tests/conversation-ui.test.cjs tests/worker-bridge.test.mjs tests/rbac.test.cjs
+        run: node --test tests/context-engine.test.cjs tests/intent-adapter.test.cjs tests/conversation-ui.test.cjs tests/worker-bridge.test.mjs tests/rbac.test.cjs tests/ui-shell.test.cjs
