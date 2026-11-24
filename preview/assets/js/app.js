@@ -125,15 +125,15 @@ function renderDashboardPulse(monthRows, balance) {
     const host = $("heroPulseBars");
     if (!host) return;
     $("heroNetBalance").textContent = formatTotals(balance);
-    const recent = visibleTransactions().slice().sort(compareDateDesc).slice(0,14);
-    const byDay = {};
-    recent.forEach(row => { const day = row.date || ""; byDay[day] = (byDay[day] || 0) + 1; });
     const days = [];
     const cursor = new Date(); cursor.setHours(12,0,0,0);
     for (let i = 13; i >= 0; i--) {
       const date = new Date(cursor); date.setDate(cursor.getDate() - i);
       days.push(core.localDateISO(date));
     }
+    const byDay = {};
+    visibleTransactions().filter(row => row.date && row.date >= days[0] && row.date <= days[13])
+      .forEach(row => { const day = row.date; byDay[day] = (byDay[day] || 0) + 1; });
     const maxCount = Math.max(1, ...days.map(day => byDay[day] || 0));
     const activeDays = days.filter(day => byDay[day]).length;
     host.innerHTML = days.map(day => {
