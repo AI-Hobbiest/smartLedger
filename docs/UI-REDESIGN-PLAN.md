@@ -1,110 +1,115 @@
 # Smart Ledger — UI Redesign Direction
 
-**Status:** Foundation implementation in progress  
-**Reference reviewed:** Money Manager Expense & Budget by Realbyte Inc. (iOS App Store listing and published screenshots), reviewed 24 November 2026.
+**Status:** UI-1 foundation merged; UI-2 / UI-3 visual and interaction refinements in review.  
+**Reference review date:** 24 November 2026.
 
-## Product direction
+## 1. Product direction
 
-Refresh Ganathe Finance / Smart Ledger into a modern, mobile-first personal and family finance workspace. The design should feel at home on iPhone and iPad while remaining efficient on desktop. This is a product redesign, not a rebrand: preserve the Ganathe Finance / Smart Ledger identity, chat-first transaction capture, family visibility rules, trip-scoped roles and existing financial workflows.
+Ganathe Finance / Smart Ledger is being refreshed as a **premium, expressive personal and family finance workspace**. The experience should feel like a contemporary fintech product, not a spreadsheet wrapper or a traditional expense register.
 
-## Benchmark observations
+This is a distinct visual identity, not a clone of the three App Store references. Borrow the proven interaction ideas—fast capture, high information clarity, usable calendars, strong category insight and shared ledgers—while retaining Smart Ledger's conversational entry, household permissions and trip-scoped workflows.
 
-The Money Manager reference demonstrates several useful interaction patterns:
+The UI must work on iPhone, iPad and desktop. Mobile is the primary interaction target; tablet and desktop should use their additional space for richer information density and side-by-side analysis.
 
-- High-visibility income, expense and balance summaries.
-- Clear daily / calendar / monthly / summary navigation for transaction history.
-- Visual category breakdowns rather than relying only on tables.
-- Budget planning with progress against limits.
-- Multiple currencies, with totals calculated in a selected currency.
-- Quick entry and reusable payment profiles.
+## 2. Reference synthesis
+
+### Money Manager Expense & Budget — Realbyte
+The App Store listing highlights fast daily entry, configurable categories, multiple accounts and currencies, weekly / monthly / annual statistics, calendar, budget comparisons, card management, payment profiles and backup / restore. It demonstrates the value of a broad, mature ledger toolkit and detailed review surfaces.
+
+### Spending Tracker — Budget App — InnerGrow
+The listing highlights budget cards, category and subcategory budgets, recurring transactions, subscription management, shared budgeting / ledger, AI-assisted import / voice / receipt capture, widgets, shortcuts, calendar and charts. Its more colourful category presentation demonstrates how visual coding can improve scanability.
+
+### Expense Manager — Budget App — Pavans Group Techsoft
+The supplied App Store ID currently resolves to Expense Manager - Budget App (also presented as Budget Buddy in the URL). Its listing highlights manual / voice / receipt entry, personal / business / travel accounts, shared accounts, recurring entries, offline and privacy options, and PDF / Excel exports. The App Store result shows only a few ratings; treat its listed feature concepts as inspiration, not proof of broad market adoption.
 
 Reference links:
-- Apple App Store (Malaysia): https://apps.apple.com/my/app/money-manager-expense-budget/id560481810
-- Realbyte product site: https://realbyteapps.com/
-- Realbyte iOS transaction-view update notes: https://help.realbyteapps.com/hc/en-us/articles/14603760564121-iOS-2-9-0-x-Update-February-2023
+- [Money Manager Expense & Budget](https://apps.apple.com/in/app/money-manager-expense-budget/id560481810)
+- [Spending Tracker - Budget App](https://apps.apple.com/in/app/spending-tracker-budget-app/id1525179720)
+- [Expense Manager - Budget App](https://apps.apple.com/in/app/expense-manager-budget-app/id6744145641)
 
-We should borrow the interaction clarity, not copy its visual identity or dense legacy layouts.
-
-## Smart Ledger differentiators to preserve
+## 3. Smart Ledger differentiators to protect
 
 1. Conversational transaction entry with explicit review before saving.
-2. Family / household roles and trip-specific Organizer / Member access.
-3. One record of who incurred an expense and who recorded it.
-4. Trip-centric shared expenses and destination currency.
-5. Personal finance remains usable outside trips; trip functionality must not dominate the everyday ledger.
+2. Household-level visibility plus trip-specific Organizer / Member permissions.
+3. Distinguish who incurred a cost from who recorded it.
+4. Trips as first-class shared workspaces with participant attribution and destination currency.
+5. Personal finance must remain the everyday centre of the product; trip management should be powerful without overwhelming everyday use.
+6. Currency integrity: until FX snapshots and conversion are implemented, never sum different currencies into a synthetic total or chart.
 
-## Design principles
+## 4. Signature visual identity
 
-- **Mobile first:** thumb-friendly controls, safe-area-aware bottom navigation, readable summaries and minimal typing.
-- **Progressive disclosure:** overview stays calm; detailed filters, edits and exports live in their own views.
-- **One visual language:** consistent spacing, rounded surfaces, typography, icon weight, status and amount styles.
-- **Numbers first:** amounts remain readable and correctly separated by currency; never add mixed-currency values into a misleading total.
-- **Fast capture:** keep chat-first entry prominent, with a direct quick-add action and manual form as a reliable alternative.
-- **Role-aware:** do not reveal actions a role cannot perform; continue to use the central authorization layer.
-- **Honest data state:** development/local-only status must remain visible until real authentication and shared storage exist.
-- **Accessible motion and contrast:** keyboard-visible focus, semantic navigation, readable text and reduced-motion support.
+The first UI foundation was deliberately conservative, but the final direction is more distinctive:
 
-## Navigation model
+- **Core mood:** editorial fintech, confident and warm, with a dramatic midnight-plum anchor.
+- **Canvas:** warm parchment / stone (#F3EEE8) rather than stark white.
+- **Primary ink:** deep aubergine (#252137, #262333).
+- **Action accent:** ember coral (#F0785D) for add / action / expense focus.
+- **Secondary palette:** lilac (#9B8BE8), amber (#E9B85B) and sky (#77A9CB) for categories, income and data series.
+- **Surfaces:** warm near-white with subtle warm borders and restrained elevation.
+- **Signature motif:** layered gradients and soft orbit / arc geometry, used sparingly around the monthly flow hero.
+- **Navigation:** deep-plum desktop sidebar; matching deep-plum mobile bottom bar with a floating coral add action.
+- **Typography:** system / Inter-style sans serif, with strong numeric hierarchy and editorial headlines.
+- **Tone:** purposeful and optimistic, never childish or overly decorative.
 
-Desktop:
-- Persistent left navigation: Overview, Transactions, Budgets, Trips, Reports.
-- Sticky top bar: product identity, quick add, preview identity, data-state indicator and development backup actions.
-- Content area changes by destination instead of presenting every module as one long dashboard.
+No plain white-and-green palette as the product's primary identity. Green may appear only when semantically useful, not as the dominant brand colour.
 
-Mobile:
-- Fixed bottom navigation: Home, Activity, Add, Budgets, Trips, Reports.
-- Sticky compact top bar with product mark and preview identity.
-- Forms remain dialogs / sheets initially; a later pass can optimize them into native-feeling full-screen mobile flows.
+## 5. Design principles
 
-## Screen architecture
+- **Clarity before decoration:** visual personality must not compete with amounts, dates, categories or permissions.
+- **Progressive disclosure:** overview answers what happened, where it went and what needs attention. Detailed analysis lives in its own screen.
+- **Fast capture:** chat-first entry remains prominent with quick add and a reliable manual alternative.
+- **Currency integrity:** summaries and charts are grouped by currency. No fake conversion.
+- **Role-aware UI:** preserve the central authorization checks and only render permitted edit / close actions.
+- **Responsive hierarchy:** tap targets and one-column flows on phone; richer grids and persistent navigation on larger screens.
+- **Accessible states:** contrast, visible keyboard focus, semantic labels and reduced-motion support.
+- **Honest data state:** development-only / local-storage notice remains visible until trusted sign-in and shared storage are implemented.
+
+## 6. Screen specifications and implementation
 
 ### Overview
-- Four compact KPIs: month expenses, month income, monthly net balance and active trips.
-- Prominent conversational assistant.
-- Quick actions for expense, income, trip and budget.
+- Four compact KPIs: monthly expense, income, net balance (kept separate by currency) and active trips.
+- Signature dark monthly-flow hero with daily transaction-count pulse for the last 14 days.
+- Conversational assistant and direct quick actions.
 - Category breakdown grouped by currency.
-- Recent activity with a clear route to the full ledger.
+- Recent transactions with clear routes to the full ledger.
 
 ### Transactions
-- Search and filters for type, category and trip.
-- Clear income / expense distinction.
-- Permission-aware edit and delete actions.
-- Future enhancement: calendar and day-grouped views.
+- Filterable ledger with search, type, category and trip filters.
+- Date-grouped rows, day-level totals and explicit income / expense styling.
+- Visible totals and entry counts honour the selected identity and filters.
+- Preserve row-level edit / delete permissions.
+- Future interaction enhancement: calendar / list toggle, saved filters and full transaction detail sheet.
 
 ### Budgets
-- Separate destination with visual progress indicators.
-- Keep budget currency visible; avoid mixed-currency aggregates.
+- Category cards with progress, spent, remaining / over-limit amount and clear threshold styling.
+- Currency always visible.
+- Summary counts for on-track, near-limit and over-limit budgets.
+- Future enhancement: weekly / monthly / custom budget periods, combined category budgets and safe-to-spend.
 
 ### Trips
-- Separate destination with trip cards, status, currency and expense summary.
-- Preserve the Admin trip wizard and role-based edit / close behavior.
-- Future enhancement: trip detail workspace with member roster, balances and settlement.
+- Trip cards show dates, destination, currency, expense count, spend totals, active-member count and current user's trip role.
+- Preserve Admin creation / closure controls and Organizer / Member permissions.
+- Future enhancement: trip details workspace with participant balances, shared activity, settlement and export.
 
 ### Reports
-- Time-period shortcuts, custom date range, trip report and CSV export.
-- Future enhancement: chart-first monthly trends, category drilldowns and printable reports.
+- Daily / weekly / monthly / quarterly / annual / trip / custom periods.
+- Summary totals by currency.
+- Expense / income trend series drawn separately per currency.
+- Category mix bars grouped by currency.
+- CSV export remains scoped to the transactions visible to the current identity.
+- Future enhancement: comparison periods, monthly recurring patterns, downloadable PDF / Excel reports.
 
-## Visual system — initial tokens
+## 7. Delivery phases
 
-- Canvas: soft neutral green-grey (#F5F7F5).
-- Surfaces: white, subtle border and low-elevation shadow.
-- Primary ink: deep forest (#182B25).
-- Primary accent: finance green (#187B68).
-- Secondary data colours: restrained blue, violet and warm amber; reserve red for warnings / overspend.
-- Cards: 20px desktop radius, 15–17px on narrow mobile.
-- Typography: native system / Inter-style sans-serif stack; strong numeric hierarchy.
-- Use line icons and concise labels rather than emoji-only navigation.
+1. **UI-1 — Foundation (merged):** new app shell, responsive navigation, design tokens, separate destinations and initial overview.
+2. **UI-2 — Screen refinement (in progress):** signature visual identity, data-rich overview, date-grouped transactions, budget cards, trip cards and report visualisation.
+3. **UI-3 — Interaction polish:** native-feeling mobile transaction sheet, trip details, calendar / period toggles, chart drill-down, empty / loading / error / success feedback and optional dark mode.
+4. **UI-4 — Quality and acceptance:** desktop, iPhone, iPad and Android responsive review; keyboard and accessibility checks; role-based regression; PWA install and offline smoke tests.
 
-## Delivery stages
+## 8. Guardrails and deferred work
 
-1. **UI-1 — Foundation:** new app shell, responsive navigation, design tokens, overview dashboard, category breakdown and recent activity. Preserve existing data and action IDs.
-2. **UI-2 — Screen refinement:** transactions, budgets, trips and reports layouts; dedicated details / empty states; role-specific states.
-3. **UI-3 — Interaction polish:** mobile transaction sheet, trip details, calendar / period navigation, chart drill-down, loading / error / success feedback.
-4. **UI-4 — Quality:** desktop, iPhone, iPad and Android responsive review; keyboard / accessibility; regression tests across all RBAC roles.
-
-## Guardrails
-
-- Do not alter schema, transaction calculations, RBAC semantics or storage in the visual foundation PR.
-- No real financial data: this preview continues to use device-local storage and a demo identity selector.
-- Visual changes must not weaken or bypass role checks.
-- FX conversion is separate from chart styling; do not visually imply conversion where no FX snapshot exists.
+- This redesign does not change schema, business rules, authentication or data storage.
+- Browser localStorage and the demo identity selector are not secure multi-user access. Do not enter real financial records.
+- The current budget data model does not yet define personal vs household budget scope. This visual phase does not change that policy.
+- FX rate capture / conversion is still deferred. Charts remain currency-specific until that work is implemented and verified.
+- No full browser automation or live iPhone / iPad device test has been executed yet. CI tests protect the static UI structure and JavaScript workflows; visual acceptance still needs a human smoke test on deployed Pages.
