@@ -933,6 +933,18 @@ function runReport(period, selectedTripId) {
     document.querySelectorAll("[data-report]").forEach(button => button.addEventListener("click", () => runReport(button.dataset.report)));
     $("customReportButton").addEventListener("click", () => runReport("custom"));
     document.querySelectorAll("[data-prompt]").forEach(button => button.addEventListener("click", () => handleCommand(button.dataset.prompt)));
+    const assistantPanel = $("assistantPanel"), assistantLauncher = $("assistantLauncher");
+    function setAssistantOpen(open) {
+      assistantPanel.hidden = !open;
+      assistantLauncher.setAttribute("aria-expanded", String(open));
+      assistantLauncher.hidden = open;
+      if (open) $("chatInput").focus({ preventScroll: true });
+    }
+    assistantLauncher.addEventListener("click", () => setAssistantOpen(true));
+    $("assistantClose").addEventListener("click", () => { setAssistantOpen(false); assistantLauncher.focus(); });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !assistantPanel.hidden) { setAssistantOpen(false); assistantLauncher.focus(); }
+    });
     $("chatForm").addEventListener("submit", event => {
       event.preventDefault(); const value = $("chatInput").value.trim();
       if (value) { $("chatInput").value = ""; handleCommand(value); }
