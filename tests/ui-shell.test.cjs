@@ -99,3 +99,28 @@ test("the refreshed brand uses the plum theme in browser and installed PWA metad
   assert.match(css, /--lilac:#9b8be8/);
   assert.match(css, /--plum:#252137/);
 });
+
+
+test("trip cards open a permission-checked trip workspace with members and recent activity", () => {
+  assert.match(html, /id="tripDetailDialog"/);
+  assert.match(html, /id="tripDetailBody"/);
+  assert.match(app, /function openTripDetail\(tripId\)/);
+  assert.match(app, /authz\.canViewTrip\(currentUser, trip, data\.tripMembers\)/);
+  assert.match(app, /data-tripdetail-all/);
+  assert.match(app, /data-tripdetail-report/);
+});
+
+test("budget and report category drilldowns navigate to filtered ledger activity", () => {
+  assert.match(app, /data-budget-activity/);
+  assert.match(app, /data-report-category/);
+  assert.match(app, /setActivePage\("transactions"\)/);
+  assert.match(app, /transactionCategoryFilter/);
+});
+
+test("mobile sheet styling respects safe areas and reduced-motion preferences", () => {
+  assert.match(css, /env\(safe-area-inset-bottom\)/);
+  assert.match(css, /prefers-reduced-motion/);
+  assert.match(css, /\.app-dialog\[open\]/);
+  assert.match(html, /aria-live="polite"/);
+  assert.match(html, /id="toastRegion"/);
+});
