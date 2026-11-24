@@ -78,3 +78,22 @@ test("schema v1 migration preserves rows and converts old names into trip-only m
   assert.equal(migrated.tripMembers.length, 2);
   assert.equal(migrated.users.filter(user => user.isTripOnly).length, 2);
 });
+
+test("removing a participant revokes membership without deleting its audit record", async () => {
+  const memory = new Map();
+  const storage = { getItem: key => memory.get(key) || null, setItem: (key, value) => memory.set(key, value) };
+  memory.set("membership-ledger", JSON.stringify({
+    schemaVersion: 2,
+    transactions: [],
+    trips: [{ id: "T-AUDIT", name: "Audit trip", status: "Planned", currency: "AED" }],
+    tripMembers: [{ id: "TM-1", tripId: "T-AUDIT", userId: "M", tripRole: "Member", membershipStatus: "Active" }],
+    users: [{ id: "M", name: "Member", householdRole: "HouseholdMember", status: "Active", isTripOnly: false }],
+    budgets: []
+  }));
+  const repo = repositoryModule.create({ key: "membership-ledger", storage });
+  await repo.updateTrip({ id: "T-AUDIT", name: "Audit trip", status: "Planned", currency: "AED", updatedByUserId: "A" }, [], []);
+  const updated = await repo.readSnapshot();
+  assert.equal(updated.tripMembers.length, 1);
+  assert.equal(updated.tripMembers[0].membershipStatus, "Revoked");
+  assert.equal(updated.tripMembers[0].revokedByUserId, "A");
+});
