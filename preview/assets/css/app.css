@@ -761,3 +761,74 @@ footer{padding:26px 0 4px;color:#a59aa3;font-size:9px;text-align:left}
 @media(max-width:640px) and (prefers-reduced-motion:no-preference){
   .app-dialog[open]{animation:dialog-sheet-enter .22s ease-out}
 }
+
+
+/* Mobile usability refinement — readable type and chat-first dashboard */
+@media(max-width:640px){
+  body{font-size:16px}
+  .main-content{padding-top:14px;padding-bottom:calc(112px + env(safe-area-inset-bottom))}
+  .development-banner{font-size:12px;line-height:1.5;padding:10px 12px;margin-bottom:14px}
+  .development-banner-icon{width:20px;height:20px;flex-basis:20px}
+  .view-heading{align-items:flex-start;gap:8px;margin-bottom:14px}
+  .view-heading h1{font-size:29px}
+  .view-heading>div>p:last-child{font-size:13px;line-height:1.4}
+  .view-heading .eyebrow{font-size:10px}
+  .date-chip{font-size:10px}
+  .stats-grid{gap:10px;margin-bottom:13px}
+  .stat-card{padding:14px 13px}
+  .stat-top{font-size:12px;line-height:1.3}
+  .stat-card strong{font-size:18px}
+  .stat-card small{font-size:11px;line-height:1.35}
+  .money-hero{padding:20px;gap:13px}
+  .hero-kicker{font-size:10px}
+  .money-hero h2{font-size:30px}
+  .money-hero-copy>p:not(.hero-kicker){font-size:13px;line-height:1.45}
+  .hero-balance-label{font-size:11px}
+  #heroNetBalance{font-size:21px}
+  #heroTransactionPulse{font-size:11px}
+  .hero-chart-title,.hero-chart-legend{font-size:10px}
+  .conversation-panel{padding:16px}
+  .conversation-panel .panel-heading{align-items:flex-start}
+  .panel-heading h2{font-size:18px}
+  .panel-subtitle{font-size:13px;line-height:1.45}
+  .conversation-tools .text-button{font-size:12px}
+  .chat-stream{max-height:112px;overflow-y:auto;gap:8px;padding-bottom:7px}
+  .message-body{font-size:14px;line-height:1.5}
+  .message-body p{margin:0 0 6px}
+  .avatar{width:30px;height:30px;flex-basis:30px;font-size:11px}
+  .suggestion-row{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:7px;margin:7px 0 10px;padding-bottom:3px;scrollbar-width:thin}
+  .suggestion{flex:0 0 auto;padding:7px 10px;font-size:11px}
+  .chat-entry{min-height:50px;padding:5px 6px 5px 12px}
+  .chat-entry input{min-width:0;font-size:15px}
+  .send-button{width:40px;height:40px;flex-basis:40px;font-size:17px}
+  .micro-note{font-size:11px;line-height:1.4}
+  .quick-action strong{font-size:13px}
+  .quick-action small{font-size:11px;line-height:1.35}
+  .panel-heading h2{font-size:18px}
+  .item-copy strong,.dashboard-recent-copy strong{font-size:13px}
+  .item-copy small,.dashboard-recent-copy small{font-size:11px}
+  .dashboard-recent-amount{font-size:12px}
+  .category-currency-heading,.category-line-top{font-size:12px}
+  .category-line-top strong{font-size:11px}
+  .budget-title strong,.budget-amount-row strong{font-size:13px}
+  .budget-title small,.budget-amount-row small,.budget-foot small{font-size:11px}
+  .trip-item strong{font-size:15px}
+  .trip-item small,.trip-participant-count{font-size:11px}
+  .report-button strong{font-size:13px}
+  .report-button small{font-size:11px}
+  .mobile-nav button small{font-size:10px}
+  .mobile-nav-icon{font-size:21px}
+  .filter-grid input,.filter-grid select{font-size:13px;min-height:42px}
+  .page-panel .panel-heading .button{font-size:12px}
+}
+@media(max-width:380px){
+  .app-shell-redesigned .topbar{padding:0 10px}
+  .app-shell-redesigned .brand strong{font-size:14px}
+  .app-shell-redesigned .header-actions{max-width:52%}
+  .view-heading h1{font-size:27px}
+  .date-chip{font-size:9px;padding:6px}
+  .stats-grid{gap:8px}
+  .stat-card{padding:12px 10px}
+  .stat-card strong{font-size:16px}
+  .conversation-panel{padding:13px}
+}
