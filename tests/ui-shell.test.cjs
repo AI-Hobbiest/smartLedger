@@ -125,3 +125,18 @@ test("mobile sheet styling respects safe areas and reduced-motion preferences", 
   assert.match(html, /aria-live="polite"/);
   assert.match(html, /id="toastRegion"/);
 });
+
+
+test("mobile dashboard places the chat composer before financial summary cards", () => {
+  const overview = html.slice(html.indexOf('id="page-overview"'));
+  assert.ok(overview.indexOf('class="panel conversation-panel"') < overview.indexOf('class="stats-grid"'));
+  assert.match(overview, /id="chatForm"/);
+  assert.match(overview, /id="chatInput"/);
+});
+
+test("mobile typography uses readable minimum sizes for chat and dashboard labels", () => {
+  assert.match(css, /\.message-body\{font-size:14px;line-height:1\.5\}/);
+  assert.match(css, /\.chat-entry input\{min-width:0;font-size:15px\}/);
+  assert.match(css, /\.stat-top\{font-size:12px;line-height:1\.3\}/);
+  assert.match(css, /\.development-banner\{font-size:12px;line-height:1\.5/);
+});
