@@ -21,11 +21,6 @@
         <button class="button button-primary header-add-button" data-action="expense" type="button"><span aria-hidden="true">＋</span> Add transaction</button>
         <label class="dev-identity-switch">Preview as <select id="demoIdentitySelect" aria-label="Switch development preview identity"></select></label>
         <span id="syncStatus" class="sync-pill" data-state="local"><span class="sync-dot"></span><span id="syncText">Development data · this browser</span></span>
-        <div class="backup-actions">
-          <button class="button button-outline button-small" id="exportBackupButton" type="button">Export backup</button>
-          <button class="button button-outline button-small" id="importBackupButton" type="button">Import backup</button>
-          <input id="importBackupInput" type="file" accept=".json,application/json" hidden>
-        </div>
       </div>
     </header>
 
@@ -170,6 +165,14 @@
             <div class="custom-report"><label>From <input id="reportFrom" type="date"></label><label>To <input id="reportTo" type="date"></label><button id="customReportButton" class="button button-outline button-small" type="button">Run custom report</button></div>
             <div id="reportResult" class="report-result" hidden aria-live="polite"></div>
           </section>
+          <section class="panel backup-panel">
+            <div class="panel-heading"><div><p class="eyebrow">LOCAL DEVELOPMENT DATA</p><h2>Backup and restore</h2><p class="panel-subtitle">Download a copy of this browser's test data or restore a previous backup.</p></div></div>
+            <div class="backup-actions">
+              <button class="button button-outline button-small" id="exportBackupButton" type="button">↓ Export backup</button>
+              <button class="button button-outline button-small" id="importBackupButton" type="button">↑ Import backup</button>
+              <input id="importBackupInput" type="file" accept=".json,application/json" hidden>
+            </div>
+          </section>
         </section>
 
         <footer>Ganathe Finance · Smart Ledger <span>·</span> Development build <span>·</span> <a href="./privacy-policy.html">Privacy</a></footer>
@@ -177,12 +180,12 @@
     </div>
 
     <nav class="mobile-nav" aria-label="Mobile navigation">
-      <button type="button" data-nav-target="overview" class="is-active" aria-current="page"><span class="mobile-nav-icon">⌂</span><small>Home</small></button>
-      <button type="button" data-nav-target="transactions"><span class="mobile-nav-icon">≡</span><small>Activity</small></button>
+      <button type="button" data-nav-target="overview" class="is-active" aria-current="page"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span><small>Home</small></button>
+      <button type="button" data-nav-target="transactions"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h12M8 12h12M8 19h12"/><path d="m3.5 5 1.5 1.5L7 4.5M3.5 12l1.5 1.5L7 11.5M3.5 19l1.5 1.5L7 18.5"/></svg></span><small>Activity</small></button>
       <button type="button" class="mobile-nav-add" data-action="expense" aria-label="Add transaction"><span>＋</span><small>Add</small></button>
-      <button type="button" data-nav-target="budgets"><span class="mobile-nav-icon">▤</span><small>Budgets</small></button>
-      <button type="button" data-nav-target="trips"><span class="mobile-nav-icon">✈</span><small>Trips</small></button>
-      <button type="button" data-nav-target="reports"><span class="mobile-nav-icon">⌁</span><small>Reports</small></button>
+      <button type="button" data-nav-target="budgets"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h4"/></svg></span><small>Budgets</small></button>
+      <button type="button" data-nav-target="trips"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14.5 21 6l-5.5 15-3.2-6.1L6 12z"/><path d="m12.3 14.9 3.7-3.7"/></svg></span><small>Trips</small></button>
+      <button type="button" data-nav-target="reports"><span class="mobile-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V4.5M4 19.5h16"/><rect x="7" y="11" width="3" height="5" rx="1"/><rect x="12" y="7" width="3" height="9" rx="1"/><rect x="17" y="4.5" width="3" height="11.5" rx="1"/></svg></span><small>Reports</small></button>
     </nav>
   </div>
 
