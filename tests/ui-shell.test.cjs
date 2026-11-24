@@ -45,3 +45,57 @@ test("development-only data warning remains visible in the new app shell", () =>
   assert.match(html, /Development workspace/);
   assert.match(html, /do not enter real financial records yet/i);
 });
+
+
+test("the signature overview hero is data-backed and reports activity counts rather than mixing currencies", () => {
+  for (const id of ["heroNetBalance", "heroTransactionPulse", "heroPulseBars", "heroActiveDays"]) {
+    assert.match(html, new RegExp('id="' + id + '"'));
+  }
+  assert.match(app, /function renderDashboardPulse/);
+  assert.match(app, /byDay\[day\] = \(byDay\[day\] \|\| 0\) \+ 1/);
+  assert.match(app, /formatTotals\(balance\)/);
+});
+
+test("transaction history is grouped by date while retaining permission-aware row actions", () => {
+  assert.match(app, /function dateHeading/);
+  assert.match(app, /const grouped = new Map\(\)/);
+  assert.match(app, /authz\.canEditTransaction/);
+  assert.match(app, /authz\.canDeleteTransaction/);
+  for (const id of ["transactionVisibleCount", "transactionExpenseTotal", "transactionIncomeTotal"]) {
+    assert.match(html, new RegExp('id="' + id + '"'));
+  }
+});
+
+test("budget cards show remaining amounts and near/over-limit states", () => {
+  assert.match(app, /const remaining = limit - spent/);
+  assert.match(app, /percent >= 100 \? "over" : percent >= 80 \? "near" : "safe"/);
+  assert.match(app, /budget-ring/);
+  assert.match(html, /id="budgetOverview"/);
+});
+
+test("trip cards remain role-aware and include participant context", () => {
+  assert.match(app, /authz\.canEditTripDetails/);
+  assert.match(app, /authz\.canCloseTrip/);
+  assert.match(app, /authz\.getMembership\(currentUser, trip, data\.tripMembers\)/);
+  assert.match(app, /tripMembers\.length/);
+  assert.match(html, /id="tripOverview"/);
+});
+
+test("reports render separate income and expense series for each currency", () => {
+  assert.match(app, /function buildReportVisuals/);
+  assert.match(app, /const currencies = \[\.\.\.new Set\(rows\.map\(txCurrency\)\)\]/);
+  assert.match(app, /class="expense-bar"/);
+  assert.match(app, /class="income-bar"/);
+  assert.match(app, /report-currency-group/);
+});
+
+test("the refreshed brand uses the plum theme in browser and installed PWA metadata", () => {
+  assert.match(html, /theme-color" content="#252137"/);
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, "preview/manifest.json"), "utf8"));
+  assert.equal(manifest.theme_color, "#252137");
+  assert.equal(manifest.background_color, "#f3eee8");
+  const css = fs.readFileSync(path.join(root, "preview/assets/css/app.css"), "utf8");
+  assert.match(css, /--coral:#f0785d/);
+  assert.match(css, /--lilac:#9b8be8/);
+  assert.match(css, /--plum:#252137/);
+});
