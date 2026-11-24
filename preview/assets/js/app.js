@@ -3,7 +3,10 @@
   const $ = id => document.getElementById(id);
   const core = window.SmartLedgerCore;
   const repository = window.GanatheLedgerRepository.create();
-  let data = { transactions: [], trips: [], budgets: [] };
+  const authz = window.GanatheLedgerAuthz;
+  let data = { transactions: [], trips: [], tripMembers: [], users: [], budgets: [] };
+  let currentUser = null;
+  let tripWizardStep = 1;
   let currentDraft = null;
   let conversationState = null;
   let reportRows = [];
@@ -14,11 +17,48 @@
   const txCurrency = row => row.currency || "AED";
   const compareDateDesc = (a, b) => String(b.date || "").localeCompare(String(a.date || "")) || String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
   const tripName = id => (data.trips.find(item => item.id === id) || {}).name || "";
+  const visibleTransactions = () => authz.visibleTransactions(data.transactions, currentUser, data.trips, data.tripMembers);
+  const visibleTrips = () => authz.visibleTrips(data.trips, currentUser, data.tripMembers);
+  const userName = id => (data.users.find(item => item.id === id) || {}).name || "Unknown user";
+  function isAdminPreview() { return authz.isAdmin(currentUser); }
+  function updateAdminControls() {
+    const admin = isAdminPreview();
+    $("addTripLink").hidden = !admin;
+    const quickTrip = document.querySelector('[data-action="trip"]');
+    if (quickTrip) quickTrip.hidden = !admin;
+    $("exportBackupButton").hidden = !admin;
+    $("importBackupButton").hidden = !admin;
+  }
+  function renderIdentitySwitch() {
+    const select = $("demoIdentitySelect");
+    const available = data.users.filter(user => !user.isTripOnly && (user.status || "Active") === "Active");
+    select.innerHTML = available.map(user => '<option value="' + safe(user.id) + '">' + safe(user.name) + (authz.isAdmin(user) ? " · Admin" : " · Member") + '</option>').join("");
+    if (!available.some(user => currentUser && user.id === currentUser.id)) currentUser = available.find(user => user.id === "DEMO-ADMIN") || available[0] || null;
+    if (currentUser) select.value = currentUser.id;
+    select.onchange = () => {
+      const next = data.users.find(user => user.id === select.value && !user.isTripOnly);
+      if (!next) return;
+      currentUser = next;
+      try { localStorage.setItem("ganathe.smartledger.preview.identity", currentUser.id); } catch (_) {}
+      render();
+      addChat("Preview identity switched to " + currentUser.name + ". This selector is for development testing only.", "assistant");
+    };
+  }
 
   function setStatus(label, state) { $("syncText").textContent = label; $("syncStatus").dataset.state = state || "local"; }
   async function loadData() {
     const snapshot = await repository.readSnapshot();
-    data = { transactions: snapshot.transactions, trips: snapshot.trips, budgets: snapshot.budgets };
+    data = {
+      transactions: snapshot.transactions,
+      trips: snapshot.trips,
+      tripMembers: snapshot.tripMembers || [],
+      users: snapshot.users || [],
+      budgets: snapshot.budgets
+    };
+    let storedIdentity = "";
+    try { storedIdentity = localStorage.getItem("ganathe.smartledger.preview.identity") || ""; } catch (_) {}
+    currentUser = data.users.find(user => user.id === storedIdentity && !user.isTripOnly) ||
+      data.users.find(user => user.id === "DEMO-ADMIN") || data.users.find(user => !user.isTripOnly) || null;
     render();
   }
 
@@ -37,7 +77,7 @@
 
   function renderDashboard() {
     const month = today().slice(0, 7);
-    const rows = data.transactions.filter(row => String(row.date || "").slice(0, 7) === month);
+    const rows = visibleTransactions().filter(row => String(row.date || "").slice(0, 7) === month);
     const expenses = totals(rows, "Expense"), income = totals(rows, "Income"), balance = {};
     new Set([...Object.keys(expenses), ...Object.keys(income)]).forEach(code => { balance[code] = (income[code] || 0) - (expenses[code] || 0); });
     $("monthSpend").textContent = formatTotals(expenses);
@@ -45,13 +85,13 @@
     $("monthBalance").textContent = formatTotals(balance);
     $("monthSpendHint").textContent = rows.filter(row => row.type === "Expense").length + " expense entries";
     $("monthIncomeHint").textContent = rows.filter(row => row.type === "Income").length + " income entries";
-    $("activeTrips").textContent = data.trips.filter(item => ["Planned", "Active"].includes(item.status || "Active")).length;
+    $("activeTrips").textContent = visibleTrips().filter(item => ["Planned", "Active"].includes(item.status || "Active")).length;
   }
 
   function filterTransactions() {
     const search = $("transactionSearch").value.trim().toLowerCase();
     const type = $("transactionTypeFilter").value, category = $("transactionCategoryFilter").value, trip = $("transactionTripFilter").value;
-    return data.transactions.filter(row => {
+    return visibleTransactions().filter(row => {
       const haystack = [row.description, row.category, row.notes, row.paidBy, tripName(row.tripId)].join(" ").toLowerCase();
       return (!search || haystack.includes(search)) && (!type || row.type === type) &&
         (!category || row.category === category) && (!trip || (trip === "__personal" ? !row.tripId : row.tripId === trip));
@@ -60,12 +100,16 @@
 
   function renderTransactions() {
     const host = $("transactionList"), rows = filterTransactions();
-    $("transactionCount").textContent = rows.length + " of " + data.transactions.length + " transactions";
-    if (!rows.length) { host.innerHTML = '<div class="empty-state">No matching transactions. Try another filter or add an entry.</div>'; return; }
+    $("transactionCount").textContent = rows.length + " visible of " + visibleTransactions().length + " transactions";
+    if (!rows.length) { host.innerHTML = '<div class="empty-state">No transactions available for this identity. Try another filter or add an entry.</div>'; return; }
     host.innerHTML = rows.slice(0, 100).map(row => {
       const isIncome = row.type === "Income";
       const trip = row.tripId ? " · " + safe(tripName(row.tripId) || "Trip") : "";
-      return '<article class="transaction-item managed-transaction"><div class="item-main"><span class="item-icon">' + (isIncome ? "↗" : "↘") + '</span><div class="item-copy"><strong>' + safe(row.description) + '</strong><small>' + safe(row.category) + ' · ' + safe(row.date) + trip + '</small><small>' + safe(row.paymentType || "Other") + ' · ' + safe(row.paidBy || "Me") + '</small></div></div><div class="transaction-side"><span class="item-amount ' + (isIncome ? "income" : "") + '">' + (isIncome ? "+" : "−") + safe(money(row.amount, row.currency)) + '</span><div class="row-actions"><button type="button" data-edit-tx="' + safe(row.id) + '">Edit</button><button type="button" data-delete-tx="' + safe(row.id) + '">Delete</button></div></div></article>';
+      const mayEdit = authz.canEditTransaction(currentUser, row, data.trips, data.tripMembers);
+      const mayDelete = authz.canDeleteTransaction(currentUser, row, data.trips, data.tripMembers);
+      const actions = (mayEdit ? '<button type="button" data-edit-tx="' + safe(row.id) + '">Edit</button>' : '') +
+        (mayDelete ? '<button type="button" data-delete-tx="' + safe(row.id) + '">Delete</button>' : '');
+      return '<article class="transaction-item managed-transaction"><div class="item-main"><span class="item-icon">' + (isIncome ? "↗" : "↘") + '</span><div class="item-copy"><strong>' + safe(row.description) + '</strong><small>' + safe(row.category) + ' · ' + safe(row.date) + trip + '</small><small>' + safe(row.paymentType || "Other") + ' · ' + safe(row.paidBy || userName(row.spentByUserId)) + '</small></div></div><div class="transaction-side"><span class="item-amount ' + (isIncome ? "income" : "") + '">' + (isIncome ? "+" : "−") + safe(money(row.amount, row.currency)) + '</span><div class="row-actions">' + actions + '</div></div></article>';
     }).join("");
     host.querySelectorAll("[data-edit-tx]").forEach(button => button.addEventListener("click", () => {
       const row = data.transactions.find(item => item.id === button.dataset.editTx);
@@ -73,35 +117,45 @@
     }));
     host.querySelectorAll("[data-delete-tx]").forEach(button => button.addEventListener("click", async () => {
       const row = data.transactions.find(item => item.id === button.dataset.deleteTx);
-      if (!row || !confirm("Delete this " + row.type.toLowerCase() + " entry: " + row.description + "?")) return;
+      if (!row || !authz.canDeleteTransaction(currentUser, row, data.trips, data.tripMembers)) return;
+      if (!confirm("Delete this " + row.type.toLowerCase() + " entry: " + row.description + "?")) return;
       try { await repository.deleteTransaction(row.id); await loadData(); addChat("Transaction deleted.", "assistant"); }
       catch (error) { showError(error); }
     }));
   }
 
   function renderTrips() {
-    const host = $("tripList");
-    if (!data.trips.length) host.innerHTML = '<div class="empty-state">No trips yet. Create one to group travel spending.</div>';
-    else host.innerHTML = data.trips.slice().sort((a,b) => String(b.startDate || "").localeCompare(String(a.startDate || ""))).map(trip => {
-      const linked = data.transactions.filter(row => row.tripId === trip.id && row.type === "Expense");
-      return '<article class="trip-item"><div><strong>' + safe(trip.name) + '</strong><small>' + safe(trip.destination || "Destination not set") + (trip.startDate ? " · " + safe(trip.startDate) : "") + '</small><small>' + linked.length + ' expense entries · ' + safe(formatTotals(totals(linked))) + '</small></div><div class="trip-actions"><span class="trip-badge">' + safe(trip.status || "Planned") + '</span><button type="button" data-edit-trip="' + safe(trip.id) + '">Edit</button><button type="button" data-trip-report="' + safe(trip.id) + '">Report</button><button type="button" data-delete-trip="' + safe(trip.id) + '">Delete</button></div></article>';
+    const host = $("tripList"), trips = visibleTrips();
+    if (!trips.length) { host.innerHTML = '<div class="empty-state">No trips are assigned to this identity.</div>'; return; }
+    host.innerHTML = trips.slice().sort((a,b) => String(b.startDate || "").localeCompare(String(a.startDate || ""))).map(trip => {
+      const linked = visibleTransactions().filter(row => row.tripId === trip.id && row.type === "Expense");
+      const mayEdit = authz.canEditTripDetails(currentUser, trip, data.tripMembers);
+      const mayClose = authz.canCloseTrip(currentUser, trip);
+      const actions = (mayEdit ? '<button type="button" data-edit-trip="' + safe(trip.id) + '">Edit details</button>' : '') +
+        (mayClose ? '<button type="button" data-close-trip="' + safe(trip.id) + '">Close trip</button>' : '') +
+        '<button type="button" data-trip-report="' + safe(trip.id) + '">Report</button>';
+      return '<article class="trip-item"><div><strong>' + safe(trip.name) + '</strong><small>' + safe(trip.destination || "Destination not set") + (trip.startDate ? " · " + safe(trip.startDate) : "") + '</small><small>' + linked.length + ' expense entries · ' + safe(formatTotals(totals(linked))) + '</small><small>Default currency: ' + safe(trip.currency || "AED") + '</small></div><div class="trip-actions"><span class="trip-badge">' + safe(trip.status || "Planned") + '</span>' + actions + '</div></article>';
     }).join("");
     host.querySelectorAll("[data-edit-trip]").forEach(button => button.addEventListener("click", () => {
       const trip = data.trips.find(item => item.id === button.dataset.editTrip);
       if (trip) openTripForm(trip);
     }));
     host.querySelectorAll("[data-trip-report]").forEach(button => button.addEventListener("click", () => runReport("trip", button.dataset.tripReport)));
-    host.querySelectorAll("[data-delete-trip]").forEach(button => button.addEventListener("click", async () => {
-      const trip = data.trips.find(item => item.id === button.dataset.deleteTrip);
-      if (!trip || !confirm("Delete trip '" + trip.name + "'? Linked transactions will remain but become personal entries.")) return;
-      try { await repository.deleteTrip(trip.id); await loadData(); }
-      catch (error) { showError(error); }
+    host.querySelectorAll("[data-close-trip]").forEach(button => button.addEventListener("click", async () => {
+      const trip = data.trips.find(item => item.id === button.dataset.closeTrip);
+      if (!trip || !authz.canCloseTrip(currentUser, trip)) return;
+      if (!confirm("Close " + trip.name + "? It will remain available for reports but become read-only.")) return;
+      try {
+        await repository.updateTrip({ ...trip, status: "Closed", closedByUserId: currentUser.id, closedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+        await loadData();
+        addChat("Trip closed. Its history remains available for permitted read-only reports.", "assistant");
+      } catch (error) { showError(error); }
     }));
   }
 
   function currentMonthBudgetSpent(budget) {
     const month = today().slice(0, 7);
-    return data.transactions.filter(row => row.type === "Expense" && String(row.date || "").slice(0, 7) === month &&
+    return visibleTransactions().filter(row => row.type === "Expense" && String(row.date || "").slice(0, 7) === month &&
       row.category === budget.category && txCurrency(row) === budget.currency).reduce((sum, row) => sum + Number(row.amount || 0), 0);
   }
 
@@ -132,15 +186,26 @@
     const filterCategories = [...new Set([...core.CATEGORIES, ...core.INCOME_CATEGORIES])];
     $("transactionCategoryFilter").innerHTML = '<option value="">All categories</option>' +
       filterCategories.map(value => '<option value="' + safe(value) + '">' + safe(value) + '</option>').join("");
-    const tripOptions = data.trips.map(trip => '<option value="' + safe(trip.id) + '">' + safe(trip.name) + '</option>').join("");
+    const usableTrips = visibleTrips();
+    const tripOptions = usableTrips.map(trip => '<option value="' + safe(trip.id) + '">' + safe(trip.name) + '</option>').join("");
     const currentTxTrip = $("txTrip").value, currentFilterTrip = $("transactionTripFilter").value;
-    $("txTrip").innerHTML = '<option value="">Personal / non-trip</option>' + tripOptions;
+    $("txTrip").innerHTML = '<option value="">Personal / non-trip</option>' +
+      usableTrips.filter(trip => authz.isTripOpen(trip)).map(trip => '<option value="' + safe(trip.id) + '">' + safe(trip.name) + '</option>').join("");
     $("transactionTripFilter").innerHTML = '<option value="">All activity</option><option value="__personal">Personal only</option>' + tripOptions;
-    if (data.trips.some(item => item.id === currentTxTrip)) $("txTrip").value = currentTxTrip;
-    if (data.trips.some(item => item.id === currentFilterTrip)) $("transactionTripFilter").value = currentFilterTrip;
+    if (usableTrips.some(item => item.id === currentTxTrip && authz.isTripOpen(item))) $("txTrip").value = currentTxTrip;
+    if (usableTrips.some(item => item.id === currentFilterTrip)) $("transactionTripFilter").value = currentFilterTrip;
   }
 
-  function render() { populateSelects(); renderDashboard(); renderTransactions(); renderTrips(); renderBudgets(); }
+  function render() {
+    renderIdentitySwitch();
+    updateAdminControls();
+    populateSelects();
+    renderDashboard();
+    renderTransactions();
+    renderTrips();
+    renderBudgets();
+    setStatus("Preview as " + (currentUser ? currentUser.name : "Unknown") + " · local only", "local");
+  }
 
   function addChat(text, who) {
     const wrapper = document.createElement("div"); wrapper.className = "chat-message " + (who === "user" ? "user" : "assistant");
