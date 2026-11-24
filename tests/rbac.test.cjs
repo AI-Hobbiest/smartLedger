@@ -55,8 +55,9 @@ test("closed trips are read-only, including for Admin", () => {
 
 test("trip-only participants do not gain access without active trip membership", () => {
   const guest = { id: "G", householdRole: "TripOnly", status: "Active", isTripOnly: true };
-  assert.equal(authz.canViewTrip(guest, trips[0], []), false);
-  assert.equal(authz.canViewTransaction(guest, { tripId: "T1" }, trips, []), false);
+  const guestMembership = [{ id: "G1", tripId: "T1", userId: "G", tripRole: "Member", membershipStatus: "Active" }];
+  assert.equal(authz.canViewTrip(guest, trips[0], guestMembership), false);
+  assert.equal(authz.canViewTransaction(guest, { tripId: "T1" }, trips, guestMembership), false);
 });
 
 test("schema v1 migration preserves rows and converts old names into trip-only memberships", async () => {
