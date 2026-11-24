@@ -1,8 +1,8 @@
 (function (root) {
   "use strict";
   const ACTIVE = "Active";
-  const CLOSED = new Set(["Closed", "Cancelled"]);
-  function isActiveUser(user) { return !!user && (user.status || ACTIVE) === ACTIVE; }
+  const CLOSED = new Set(["Closed", "Cancelled", "Completed"]);
+  function isActiveUser(user) { return !!user && !user.isTripOnly && (user.status || ACTIVE) === ACTIVE; }
   function isAdmin(user) {
     return isActiveUser(user) && ["HouseholdAdmin", "Admin"].includes(user.householdRole || user.role);
   }
@@ -15,7 +15,7 @@
   }
   function isTripOpen(trip) { return !!trip && !CLOSED.has(trip.status || "Planned"); }
   function canCreateTrip(user) { return isAdmin(user); }
-  function canViewTrip(user, trip, memberships) { return isAdmin(user) || !!getMembership(user, trip, memberships); }
+  function canViewTrip(user, trip, memberships) { return isAdmin(user) || (isActiveUser(user) && !!getMembership(user, trip, memberships)); }
   function canEditTripDetails(user, trip, memberships) {
     if (!isTripOpen(trip)) return false;
     if (isAdmin(user)) return true;
