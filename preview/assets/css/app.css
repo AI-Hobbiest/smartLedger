@@ -57,3 +57,30 @@
 
 /* Chat-first transaction controls */
 .conversation-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.conversation-tools .text-button{white-space:nowrap}
+
+
+/* RBAC preview identity and trip wizard */
+.dev-identity-switch{display:flex;align-items:center;gap:6px;color:#768799;font-size:10px;font-weight:800;white-space:nowrap}
+.dev-identity-switch select{max-width:150px;padding:7px 8px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-size:10px}
+.trip-wizard-dialog{max-width:590px}
+.trip-wizard-progress{display:grid;gap:7px;margin:-5px 0 18px;color:#728397;font-size:10px;font-weight:800}
+.trip-wizard-progress>div{height:5px;border-radius:8px;background:#edf1f5;overflow:hidden}
+.trip-wizard-progress i{display:block;width:33.33%;height:100%;border-radius:8px;background:var(--teal);transition:width .2s ease}
+.trip-wizard-page[hidden]{display:none}
+.wizard-subheading{margin:17px 0 3px;font-size:12px}
+.wizard-help{margin:2px 0 9px;color:#8796a5;font-size:10px}
+.trip-household-users{display:grid;gap:7px}
+.trip-household-choice{display:grid;grid-template-columns:minmax(0,1fr) 120px;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.trip-household-choice>span{display:flex;align-items:center;gap:8px;min-width:0;color:var(--ink);font-size:11px;font-weight:700}
+.trip-household-choice input[type=checkbox]{accent-color:var(--teal)}
+.trip-household-choice select{width:100%;padding:6px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font-size:10px}
+.trip-only-field{display:grid;gap:5px;color:#65798b;font-size:11px;font-weight:700}
+.trip-only-field textarea{width:100%;resize:vertical;padding:9px 10px;border:1px solid #dfe6ec;border-radius:9px;background:#fff;color:var(--ink);font:12px/1.5 inherit}
+.trip-wizard-review{display:grid;gap:10px}
+.trip-wizard-review section{padding:12px;border:1px solid var(--line);border-radius:11px;background:#fbfcfd}
+.trip-wizard-review h3{margin:0 0 6px;font-size:12px}
+.trip-wizard-review p{margin:2px 0;color:#65798b;font-size:11px}
+.trip-wizard-actions{justify-content:flex-end}
+.trip-wizard-actions #tripWizardBack{margin-right:auto}
+.trip-actions .trip-badge{margin-right:4px}
+@media(max-width:640px){.dev-identity-switch{font-size:9px}.dev-identity-switch select{max-width:110px}.trip-household-choice{grid-template-columns:minmax(0,1fr) 105px}}
