@@ -21,6 +21,37 @@
   const visibleTrips = () => authz.visibleTrips(data.trips, currentUser, data.tripMembers);
   const userName = id => (data.users.find(item => item.id === id) || {}).name || "Unknown user";
   function isAdminPreview() { return authz.isAdmin(currentUser); }
+  const PAGE_META = {
+    overview: { eyebrow: "YOUR MONEY, AT A GLANCE", title: "Overview", description: "A clear view of your spending, family activity and trips." },
+    transactions: { eyebrow: "YOUR LEDGER", title: "Transactions", description: "Search, filter and manage the activity visible to this account." },
+    budgets: { eyebrow: "PLAN WITH INTENTION", title: "Budgets", description: "Keep an eye on monthly category limits and progress." },
+    trips: { eyebrow: "SHARED SPENDING", title: "Trips", description: "Manage trip workspaces, members and shared expenses." },
+    reports: { eyebrow: "UNDERSTAND YOUR MONEY", title: "Reports", description: "Explore your activity by day, week, month, quarter or trip." }
+  };
+
+  function setActivePage(page) {
+    const selected = PAGE_META[page] ? page : "overview";
+    document.querySelectorAll(".page-view").forEach(view => {
+      const active = view.id === "page-" + selected;
+      view.hidden = !active;
+      view.classList.toggle("is-active", active);
+    });
+    document.querySelectorAll("[data-nav-target]").forEach(button => {
+      const active = button.dataset.navTarget === selected;
+      button.classList.toggle("is-active", active);
+      if (active) button.setAttribute("aria-current", "page");
+      else button.removeAttribute("aria-current");
+    });
+    const meta = PAGE_META[selected];
+    $("pageEyebrow").textContent = meta.eyebrow;
+    $("pageTitle").textContent = meta.title;
+    $("pageDescription").textContent = meta.description;
+    if (selected === "transactions") renderTransactions();
+    if (selected === "budgets") renderBudgets();
+    if (selected === "trips") renderTrips();
+    window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+
   function updateAdminControls() {
     const admin = isAdminPreview();
     $("addTripLink").hidden = !admin;
@@ -86,6 +117,38 @@
     $("monthSpendHint").textContent = rows.filter(row => row.type === "Expense").length + " expense entries";
     $("monthIncomeHint").textContent = rows.filter(row => row.type === "Income").length + " income entries";
     $("activeTrips").textContent = visibleTrips().filter(item => ["Planned", "Active"].includes(item.status || "Active")).length;
+    renderDashboardPanels(rows);
+  }
+
+  function renderDashboardPanels(monthRows) {
+    const categoriesHost = $("dashboardCategoryBreakdown");
+    const recentHost = $("dashboardRecentTransactions");
+    if (!categoriesHost || !recentHost) return;
+
+    const byCurrency = {};
+    monthRows.filter(row => row.type === "Expense").forEach(row => {
+      const currency = txCurrency(row), category = row.category || "Other";
+      if (!byCurrency[currency]) byCurrency[currency] = {};
+      byCurrency[currency][category] = (byCurrency[currency][category] || 0) + Number(row.amount || 0);
+    });
+    const currencyGroups = Object.entries(byCurrency);
+    categoriesHost.innerHTML = currencyGroups.length ? currencyGroups.map(([currency, categoryTotals]) => {
+      const entries = Object.entries(categoryTotals).sort((a,b) => b[1] - a[1]);
+      const total = entries.reduce((sum, item) => sum + item[1], 0);
+      const shown = entries.slice(0,5);
+      const remainder = entries.slice(5).reduce((sum, item) => sum + item[1], 0);
+      if (remainder > 0) shown.push(["Other categories", remainder]);
+      return '<div class="category-currency-group"><div class="category-currency-heading"><span>' + safe(currency) + ' spending</span><small>' + safe(money(total, currency)) + '</small></div>' +
+        shown.map(([category, amount]) => '<div class="category-line"><div class="category-line-top"><span>' + safe(category) + '</span><strong>' + safe(money(amount, currency)) + '</strong></div><div class="category-line-track"><span style="width:' + (total > 0 ? (amount / total * 100) : 0).toFixed(1) + '%"></span></div></div>').join("") +
+      '</div>';
+    }).join("") : '<div class="empty-state">No expenses recorded this month yet.</div>';
+
+    const recent = visibleTransactions().slice().sort(compareDateDesc).slice(0,5);
+    recentHost.innerHTML = recent.length ? recent.map(row => {
+      const income = row.type === "Income";
+      const detail = [row.category, row.date, row.tripId ? tripName(row.tripId) : ""].filter(Boolean).join(" · ");
+      return '<article class="dashboard-recent-item"><div class="dashboard-recent-main"><span class="dashboard-recent-icon ' + (income ? "income" : "") + '">' + (income ? "↗" : "↘") + '</span><div class="dashboard-recent-copy"><strong>' + safe(row.description) + '</strong><small>' + safe(detail) + '</small></div></div><span class="dashboard-recent-amount ' + (income ? "income" : "") + '">' + (income ? "+" : "−") + safe(money(row.amount, txCurrency(row))) + '</span></article>';
+    }).join("") : '<div class="empty-state">No transactions yet. Add your first test entry.</div>';
   }
 
   function filterTransactions() {
@@ -616,6 +679,8 @@
 
   document.addEventListener("DOMContentLoaded", async () => {
     $("todayLabel").textContent = new Date().toLocaleDateString(undefined, { weekday:"short", day:"numeric", month:"short", year:"numeric" });
+    document.querySelectorAll("[data-nav-target]").forEach(button => button.addEventListener("click", () => setActivePage(button.dataset.navTarget)));
+    setActivePage("overview");
     $("txDate").value = today(); $("reportFrom").value = core.periodBounds("month").start; $("reportTo").value = today();
     setStatus("Development data · this browser", "local");
     try { await loadData(); } catch (error) { showError(error); }
