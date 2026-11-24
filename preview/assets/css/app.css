@@ -747,9 +747,9 @@ footer{padding:26px 0 4px;color:#a59aa3;font-size:9px;text-align:left}
 .budget-foot .row-actions button[data-budget-activity]{color:#8374c8}
 @media(max-width:640px){
   .toast-region{top:76px;right:12px;max-width:calc(100vw - 24px);font-size:10px}
-  .app-dialog:not(.trip-wizard-dialog){position:fixed;top:auto;right:0;bottom:0;left:0;width:100vw;max-width:none;max-height:calc(100dvh - 16px);margin:auto 0 0;border-radius:24px 24px 0 0;border-bottom:0;overflow:auto}
-  .app-dialog:not(.trip-wizard-dialog)::backdrop{background:rgba(25,22,38,.52);backdrop-filter:blur(4px)}
-  .app-dialog:not(.trip-wizard-dialog) form,.trip-detail-shell{padding:23px 17px max(20px,env(safe-area-inset-bottom))}
+  .app-dialog{position:fixed;top:auto;right:0;bottom:0;left:0;width:100vw;max-width:none;max-height:calc(100dvh - 16px);margin:auto 0 0;border-radius:24px 24px 0 0;border-bottom:0;overflow:auto}
+  .app-dialog::backdrop{background:rgba(25,22,38,.52);backdrop-filter:blur(4px)}
+  .app-dialog form,.trip-detail-shell{padding:23px 17px max(20px,env(safe-area-inset-bottom))}
   .trip-detail-body{max-height:calc(100dvh - 220px)}
   .trip-detail-members{grid-template-columns:1fr 1fr}
   .trip-detail-stats{gap:6px}
@@ -759,5 +759,5 @@ footer{padding:26px 0 4px;color:#a59aa3;font-size:9px;text-align:left}
 }
 @keyframes dialog-sheet-enter{from{opacity:.6;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:640px) and (prefers-reduced-motion:no-preference){
-  .app-dialog:not(.trip-wizard-dialog)[open]{animation:dialog-sheet-enter .22s ease-out}
+  .app-dialog[open]{animation:dialog-sheet-enter .22s ease-out}
 }
