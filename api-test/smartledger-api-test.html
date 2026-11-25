@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smart Ledger API Connectivity Test</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light dark}
+body{margin:0;background:#f3f5f9;color:#182230}main{max-width:740px;margin:28px auto;padding:0 15px}
+.panel{background:white;border:1px solid #d9e0e8;border-radius:15px;padding:22px;box-shadow:0 7px 24px #18223010}
+h1{font-size:1.4rem;margin:0 0 8px}p{line-height:1.5;color:#526071}
+label{display:block;font-weight:650;margin:18px 0 7px}
+input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #b8c3d1;border-radius:9px;font:inherit}
+.buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+button{border:0;border-radius:9px;padding:11px 16px;font:inherit;font-weight:650;background:#175cd3;color:white}
+button.secondary{background:#344054}button:disabled{opacity:.55}
+.status{margin-top:17px;padding:12px;border-radius:9px;background:#eef2f6;color:#344054}
+.status.ok{background:#e8f7ee;color:#17663a}.status.bad{background:#fff0ef;color:#a3261d}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#101828;color:#e6edf7;padding:14px;border-radius:9px;min-height:85px}
+.note{font-size:.9rem}
+@media(prefers-color-scheme:dark){body{background:#101828;color:#e6edf7}.panel{background:#182230;border-color:#344054}p{color:#b8c4d3}input{background:#101828;color:#e6edf7;border-color:#526071}.status{background:#263445;color:#e6edf7}.status.ok{background:#123b29;color:#a6f4c5}.status.bad{background:#4b211f;color:#fecdca}}
+</style></head>
+<body><main><section class="panel">
+<h1>Smart Ledger — API connectivity test</h1>
+<p>Temporary diagnostic page to test your Google Apps Script web app from this browser. It does not read or write spreadsheet data.</p>
+<label for="apiUrl">Apps Script Web App URL (/exec)</label>
+<input id="apiUrl" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec">
+<div class="buttons"><button id="getBtn" onclick="runTest('GET')">Test GET</button><button id="postBtn" class="secondary" onclick="runTest('POST')">Test POST</button></div>
+<div id="status" class="status" role="status" aria-live="polite">Ready. Enter your /exec URL and choose a test.</div>
+<label for="output">Diagnostic output</label><pre id="output">No test has been run.</pre>
+<p class="note"><strong>Privacy:</strong> The URL stays in this page's memory. It is not saved or embedded in this HTML file. Do not share screenshots that expose it.</p>
+<p class="note"><strong>Interpretation:</strong> Expected JSON is <code>ONLINE</code> for GET and <code>POST_OK</code> for POST. “Failed to fetch” alone cannot distinguish CORS, redirect, network filtering or endpoint failure.</p>
+</section></main>
+<script>
+async function runTest(method){
+ const url=document.getElementById('apiUrl').value.trim(),status=document.getElementById('status'),output=document.getElementById('output');
+ const buttons=[document.getElementById('getBtn'),document.getElementById('postBtn')];
+ if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/.test(url)){
+  status.className='status bad';status.textContent='Enter the full Google Apps Script Web App URL ending in /exec.';return;
+ }
+ buttons.forEach(b=>b.disabled=true);status.className='status';status.textContent='Running '+method+' test…';output.textContent='Waiting for response…';
+ const started=performance.now();
+ try{
+  const opts=method==='GET'?{method:'GET',redirect:'follow',cache:'no-store'}:{
+   method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+   body:JSON.stringify({action:'ping',source:'SmartLedger_Temporary_HTML_Test',clientTime:new Date().toISOString()}),
+   redirect:'follow',cache:'no-store'
+  };
+  const response=await fetch(url,opts),raw=await response.text();let parsed;
+  try{parsed=JSON.parse(raw)}catch(_){parsed={note:'Response was not valid JSON',responsePreview:raw.slice(0,1000)}}
+  const expected=method==='GET'?parsed.status==='ONLINE':parsed.status==='POST_OK';
+  output.textContent=JSON.stringify({test:method,httpStatus:response.status,responseOk:response.ok,finalResponseUrl:response.url,elapsedMs:Math.round(performance.now()-started),response:parsed},null,2);
+  status.className=response.ok&&expected?'status ok':'status bad';
+  status.textContent=response.ok&&expected?method+' test passed. Browser received the expected JSON response.':method+' returned a response, but not the expected result.';
+ }catch(error){
+  status.className='status bad';status.textContent=method+' test failed in the browser.';
+  output.textContent=JSON.stringify({test:method,elapsedMs:Math.round(performance.now()-started),errorName:error&&error.name,errorMessage:error&&error.message,note:'Browser error details are limited. Check Apps Script Executions immediately after this test.'},null,2);
+ }finally{buttons.forEach(b=>b.disabled=false)}
+}
+</script></body></html>
