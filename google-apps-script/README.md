@@ -20,11 +20,7 @@ The existing PWA still uses its local-development repository. This backend is no
 3. Replace the contents of Code.gs with the contents of this repository's Code.gs file.
 4. Save the project.
 5. In the function selector, choose setupSmartLedger and click Run. Approve the requested Google Sheets permissions. This creates any missing tabs and stores the spreadsheet ID in Script Properties.
-6. Choose createInitialAdmin and run it with your own values from the editor. Example:
-
-   createInitialAdmin("your-admin-login", "a-long-unique-password-of-12-or-more-characters", "Household Admin")
-
-   Do not commit or share the password.
+6. Choose setupInitialAdminPrompt and click Run. Enter your own username, a unique password of at least 12 characters, and display name in the prompts. Do not commit or share the password.
 7. Deploy → New deployment → Web app:
    - Execute as: Me
    - Who has access: Anyone
