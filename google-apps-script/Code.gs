@@ -41,6 +41,18 @@ function setupSmartLedger() {
   return "Smart Ledger database initialised: " + ss.getUrl();
 }
 
+function setupInitialAdminPrompt() {
+  const ui = SpreadsheetApp.getUi();
+  const u = ui.prompt("Smart Ledger administrator", "Choose an administrator username:", ui.ButtonSet.OK_CANCEL);
+  if (u.getSelectedButton() !== ui.Button.OK || !u.getResponseText().trim()) return;
+  const p = ui.prompt("Smart Ledger administrator", "Enter a unique password (minimum 12 characters):", ui.ButtonSet.OK_CANCEL);
+  if (p.getSelectedButton() !== ui.Button.OK) return;
+  const n = ui.prompt("Smart Ledger administrator", "Display name:", ui.ButtonSet.OK_CANCEL);
+  if (n.getSelectedButton() !== ui.Button.OK) return;
+  const result = createInitialAdmin(u.getResponseText().trim(), p.getResponseText(), n.getResponseText().trim());
+  ui.alert(result);
+}
+
 function createInitialAdmin(username, password, displayName) {
   if (!username || !password || String(password).length < 12) {
     throw new Error("Provide an admin username and a password of at least 12 characters.");
