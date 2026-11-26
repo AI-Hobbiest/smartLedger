@@ -71,6 +71,7 @@ function doPost(e) {
     const body = JSON.parse(e && e.postData && e.postData.contents || "{}");
     const action = String(body.action || "");
     if (action === "login") return json_(login_(body));
+    if (action === "createUser") return json_(createUser_(requireSession_(body.token), body.user));
     if (action === "health") return json_({ success: true, status: "ONLINE", version: SL.VERSION });
     const user = requireSession_(body.token);
     if (action === "snapshot") return json_({ success: true, data: getSnapshot_(user) });
@@ -158,7 +159,7 @@ function saveRecord_(user, collection, record) {
   return { success: true, saved: { id: safeRecord.id, collection: collection } };
 }
 
-function deleteRecord_(user, collection, id) {
+function createUser_(actor, input) {\n  if (!isAdmin_(actor)) throw new Error("Administrator permission required.");\n  if (!input || !input.username || !input.password || String(input.password).length < 12) throw new Error("Username and a password of at least 12 characters are required.");\n  const users = readCollection_("Users");\n  if (users.some(u => String(u.username || "").toLowerCase() === String(input.username).trim().toLowerCase())) throw new Error("Username already exists.");\n  const salt = Utilities.getUuid() + Utilities.getUuid();\n  const user = { id: Utilities.getUuid(), name: String(input.name || input.username).trim(), username: String(input.username).trim(), email: String(input.email || "").trim(), householdRole: input.householdRole === "HouseholdAdmin" ? "HouseholdMember" : "HouseholdMember", status: "Active", isTripOnly: false, authSalt: salt, authHash: hashPassword_(input.password, salt), createdAt: new Date().toISOString() };\n  appendRecord_("Users", user);\n  return { success: true, user: publicUser_(user) };\n}\n\nfunction deleteRecord_(user, collection, id) {
   if (!SL.COLLECTIONS.includes(collection)) throw new Error("Invalid collection.");
   if (!isAdmin_(user) && collection !== "Transactions") throw new Error("Administrator permission required.");
   if (collection === "Transactions" && !isAdmin_(user)) {
