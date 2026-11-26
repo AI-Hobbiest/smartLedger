@@ -147,8 +147,19 @@ function saveRecord_(user, collection, record) {
   if (collection === "Trips" && !admin) throw new Error("Administrator permission required.");
   if (collection === "Budgets" && !admin) throw new Error("Administrator permission required.");
   if (collection === "Transactions") {
-    if (!admin && record.spentByUserId !== user.id && !record.tripId) throw new Error("You can only record your own personal transactions.");
-    if (!admin && record.recordedByUserId && record.recordedByUserId !== user.id) throw new Error("Invalid recorded-by user.");
+    if (!admin) {
+      const row = Object.assign({}, record);
+      if (!row.tripId && row.spentByUserId !== user.id) throw new Error("You can only record your own personal transactions.");
+      if (row.tripId) {
+        const trip = readCollection_("Trips").find(t => t.id === row.tripId && !["Closed", "Cancelled", "Completed"].includes(t.status));
+        const memberships = readCollection_("TripMembers");
+        const actorMember = memberships.some(m => m.tripId === row.tripId && m.userId === user.id && (m.membershipStatus || "Active") === "Active");
+        const spenderMember = memberships.some(m => m.tripId === row.tripId && m.userId === row.spentByUserId && (m.membershipStatus || "Active") === "Active");
+        if (!trip || !actorMember || !spenderMember) throw new Error("You or the selected spender is not an active member of this trip.");
+      }
+      row.recordedByUserId = user.id;
+      record = row;
+    }
   }
   if (collection === "TripMembers" && !admin) throw new Error("Administrator permission required.");
   const safeRecord = Object.assign({}, record);
